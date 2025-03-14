@@ -11,4 +11,6 @@
 2. **US natural disaster declaration**:(https://www.kaggle.com/datasets/headsortails/us-natural-disaster-declarations):
         This summary dataset is a high-level summary of all federally declared disasters since 1953;
 
-        
+## 📂 Download the Wildfire Dataset
+The dataset is too large for GitHub.  
+Download it here: [Google Drive Link](https://drive.google.com/drive/folders/1xpO19b1cIvR3-JFD06xTZQ-IoDitQllj?usp=drive_link))        
