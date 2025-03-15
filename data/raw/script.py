@@ -5,7 +5,8 @@ import os
 import io
 
 # Path to your credentials JSON file
-CREDENTIALS_FILE = "data/raw/credentials.json"
+CREDENTIALS_FILE = "C:\Users\Zahid\AidLift_Drone\data\raw\credentials.json"
+
 
 # Google Drive Folder ID (extract from your Drive link)
 FOLDER_ID = "106JhKlMqQD54Tk0gyU2BB2Sh4AFvbvN5"
@@ -30,7 +31,7 @@ def download_file(file_id, file_name, save_path):
         while not done:
             status, done = downloader.next_chunk()
             print(f"Downloading {file_name}... {int(status.progress() * 100)}%")
-    print(f"✅ Downloaded: {file_name}")
+    print(f" Downloaded: {file_name}")
 
 # Set the local folder where you want to save files
 SAVE_FOLDER = "data/raw"
