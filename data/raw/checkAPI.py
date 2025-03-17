@@ -1,6 +1,6 @@
 import os
 import json
-import google.auth
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 def check_api_connection():
@@ -9,8 +9,21 @@ def check_api_connection():
         key_data = os.environ.get("GOOGLE_SERVICE_ACCOUNT_KEY")
         if key_data is None:
             raise ValueError("GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set.")
+        
+        # Debug: Print the environment variable value
+        print("Environment variable value:", key_data)
+
+        # Parse the JSON content
         creds_info = json.loads(key_data)
-        creds = google.oauth2.service_account.Credentials.from_service_account_info(creds_info)
+        
+        # Debug: Print the parsed credentials info
+        print("Parsed credentials info:", creds_info)
+
+        # Create credentials from the JSON content
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=["https://www.googleapis.com/auth/drive"])
+
+        # Debug: Print the credentials object
+        print("Credentials object:", creds)
 
         # Build the service (e.g., Google Drive API)
         service = build('drive', 'v3', credentials=creds)
@@ -29,10 +42,7 @@ def check_api_connection():
         print("Successfully connected to Google Drive API using service account!")
 
     except Exception as e:
-        print(f"Error connecting to Google Drive API using service account: {e}")
+        print(f"Error connecting to Google Drive API: {e}")
 
 if __name__ == '__main__':
     check_api_connection()
-
-
-    
