@@ -1,48 +1,43 @@
 import os
-import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 def check_api_connection():
     try:
-        # Load credentials from environment variable
-        key_data = os.environ.get("GOOGLE_SERVICE_ACCOUNT_KEY")
-        if key_data is None:
-            raise ValueError("GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set.")
-        
-        # Debug: Print the environment variable value
-        print("Environment variable value:", key_data)
+        # Use the correct file path
+        key_file = r"C:\Users\Zahid\AidLift_Drone\data\keys\service_account_key.json"
 
-        # Parse the JSON content
-        creds_info = json.loads(key_data)
-        
-        # Debug: Print the parsed credentials info
-        print("Parsed credentials info:", creds_info)
+        # Ensure the file exists before proceeding
+        if not os.path.exists(key_file):
+            raise FileNotFoundError(f"Service account key file '{key_file}' not found.")
 
-        # Create credentials from the JSON content
-        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=["https://www.googleapis.com/auth/drive"])
+        print(f"Service account key found at: {key_file}")
 
-        # Debug: Print the credentials object
-        print("Credentials object:", creds)
+        # ✅ Directly load credentials from file
+        creds = service_account.Credentials.from_service_account_file(
+            key_file, scopes=["https://www.googleapis.com/auth/drive"]
+        )
 
-        # Build the service (e.g., Google Drive API)
+        print("✅ Credentials successfully created.")
+
+        # Build the Google Drive service
         service = build('drive', 'v3', credentials=creds)
 
-        # Attempt a simple API call (e.g., list files)
+        # Test API connection (list files)
         results = service.files().list(pageSize=10).execute()
         items = results.get('files', [])
 
         if not items:
-            print('No files found.')
+            print('❌ No files found in Google Drive.')
         else:
-            print('Files:')
+            print('✅ Files:')
             for item in items:
                 print(f"{item['name']} ({item['mimeType']})")
 
-        print("Successfully connected to Google Drive API using service account!")
+        print("Successfully connected to Google Drive API!")
 
     except Exception as e:
-        print(f"Error connecting to Google Drive API: {e}")
+        print(f"❌ Error connecting to Google Drive API: {e}")
 
 if __name__ == '__main__':
     check_api_connection()
