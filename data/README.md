@@ -13,4 +13,4 @@
 
 ## the Wildfire Dataset
 The dataset is too large for GitHub.  
-Download it here: [Google Drive Link](https://drive.google.com/drive/folders/1xpO19b1cIvR3-JFD06xTZQ-IoDitQllj?usp=drive_link)        
+Download it here: [Google Drive Link](https://drive.google.com/drive/folders/106JhKlMqQD54Tk0gyU2BB2Sh4AFvbvN5?usp=sharing)        
