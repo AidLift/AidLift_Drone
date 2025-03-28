@@ -8,9 +8,33 @@ def heuristic(a, b):
     return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 def a_star(graph, start, goal, locations):
-    # [Your existing A* implementation]
-    # ...
-    return path
+    open_list = []
+    heapq.heappush(open_list, (0, start))
+    came_from = {}
+    cost_so_far = {start: 0}
+    path = []  # Initialize path as empty list
+
+    while open_list:
+        _, current = heapq.heappop(open_list)
+
+        if current == goal:
+            # Reconstruct path only if we reached the goal
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.append(start)
+            path.reverse()
+            return path
+
+        for neighbor, distance in graph[current].items():
+            new_cost = cost_so_far[current] + distance
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost + heuristic(locations[neighbor], locations[goal])
+                heapq.heappush(open_list, (priority, neighbor))
+                came_from[neighbor] = current
+    
+    return path  # Return empty path if no solution found
 
 def draw_graph(graph, path):
     G = nx.DiGraph()
