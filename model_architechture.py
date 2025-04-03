@@ -99,3 +99,5 @@ for epoch in range(num_epochs):
         progress_bar.set_postfix(loss=f"{loss.item():.4f}")
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] Completed. Avg Loss: {running_loss / len(train_loader):.4f}")
+
+    print(torch.cuda.is_available())  # Should return True if GPU is available
