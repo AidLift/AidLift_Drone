@@ -12,7 +12,7 @@ function setup(){
  
        
        if(latitude != null &&
-           latitude != null){
+           longitude != null){
 
             
             map.setView([latitude, longitude], 13);
@@ -22,96 +22,101 @@ function setup(){
             .bindPopup('This is me')
             .openPopup();
 
-            // L.circle([(latitude), (longitude)], {
-            //     color: 'red',
-            //     fillColor: '#f03',
-            //     fillOpacity: 0.5,
-            //     radius: 500
-            // }).addTo(map);
-
 
 
             // Help center or a drone constantly circling
             let droneLatitude = latitude-0.30;
             let droneLongitude = longitude-0.50;
 
-            const droneMarker = L.circle([(droneLatitude), (droneLongitude)], {
-                color: 'green',
-                fillColor: '#000',
-                fillOpacity: 0.5,
-                radius: 1000
+            const droneIcon = L.icon({
+                iconUrl: 'images/drone.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+
+            const droneMarker = L.marker([droneLatitude, droneLongitude], {
+                icon: droneIcon
             }).addTo(map);
+
+            // const droneCircle = L.circle([(droneLatitude), (droneLongitude)], {
+            //     color: 'green',
+            //     fillColor: '#000',
+            //     fillOpacity: 0.5,
+            //     radius: 1000
+            // }).addTo(map);
             
+            droneMarker.on('click', ()=>{
+                console.log(`Drone is currently traveling to ${latitude}, ${longitude}`)
+            })
 
             const targetLatitude = latitude;
             const targetLongitude = longitude;
 
 
             function calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; // Radius of the Earth in kilometers
+                const R = 6371; 
                 const dLat = (lat2 - lat1) * Math.PI / 180;
                 const dLon = (lon2 - lon1) * Math.PI / 180;
                 const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                           Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                           Math.sin(dLon / 2) * Math.sin(dLon / 2);
                 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                const distance = R * c; // Distance in kilometers
-                return distance * 1000; // Convert to meters
+                const distance = R * c; 
+                return distance * 1000; 
             }
 
 
             // Test out speed and make sure it doesn't skip the tolerance
-            const speed = 0.005;
+            // const speed = 0.005;
+            const speed = 0.025;
+
             const tolerance = 0.001;
 
-            const intervalId = setInterval(()=> {
+            // Number of ms that passed on the page
+            // Tracks time between two events
+            let previousTime = performance.now();
+
+            function moveDrone(){
 
                 console.log('Drone is on its way');
-          
+                const currentTime = performance.now();
+                const deltaTime = (currentTime - previousTime) / 1000
 
                 const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
 
                 if (distance <= tolerance) {
-                // if(Math.abs(droneLatitude - targetLatitude) <= tolerance &&
-                //     Math.abs(droneLongitude - targetLongitude) <= tolerance){
-                    
-                    clearInterval(intervalId);
                     console.log("Drone has reached your location and stopped.");
                     droneMarker.setLatLng([targetLatitude, targetLongitude]);
+                    // droneCircle.setLatLng([targetLatitude, targetLongitude]);
 
                     
                 } else{
 
+                    const moveDistance = speed * deltaTime
+                    
                     // Return the new frame
-                    const moveTowardsTarget = (current, target, speed) => {
+                    const moveTowardsTarget = (current, target, moveDistance) => {
                         if (current < target) {
-                            return current + speed; 
+                            return current + moveDistance; 
                         } else if (current > target) {
-                            return current - speed; 
+                            return current - moveDistance; 
                         }
                         return current; 
                     };
 
-                    // if(droneLatitude < targetLatitude){
-                    //     droneLatitude += speed;
-
-                    // } else{
-                    //     droneLatitude -= speed;
-                    // }
-
-                    // if (droneLongitude < targetLongitude) {
-                    //     droneLongitude += speed; 
-                    // } else {
-                    //     droneLongitude -= speed;
-                    // }
-
-                    droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, speed);
-                    droneLongitude = moveTowardsTarget(droneLongitude, targetLongitude, speed);
+                    droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, moveDistance);
+                    droneLongitude = moveTowardsTarget(droneLongitude, targetLongitude, moveDistance);
                     droneMarker.setLatLng([droneLatitude, droneLongitude])
-                }
+                    // droneCircle.setLatLng([droneLatitude, droneLongitude])
 
-            }, 100)
+                    previousTime = currentTime;
+                    requestAnimationFrame(moveDrone);
+                }
+            }
        }
+
+       moveDrone();
   
    }
 
@@ -141,6 +146,7 @@ function setup(){
     }
 
     // When the button is clicked
+    // -- Clean up into helper method
     document.getElementById('assistance').addEventListener('click', function(){
         // alert(`Describe the general location and be specific (Road Signs, Buildings)`);
         
@@ -174,7 +180,6 @@ function setup(){
             
                 updateMap(latitude, longitude);
 
-
                 // Now its going to use the location to find if there's a crucial disaster nearby
                 // If there's nothing then rip u die
                 // If the disaster is bigger then the "drones" will prioritze you
@@ -189,6 +194,7 @@ function setup(){
             })
              
         } else{
+            // Add proper error handling
             console.log('Locationdead')
         }
     })
@@ -196,13 +202,12 @@ function setup(){
 
 
     // Display the map
+    // -- Add a random spawn everytime
     const map = L.map('map').setView([51.505, -0.09], 13);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
-
-    // The drone
 
 }
 
