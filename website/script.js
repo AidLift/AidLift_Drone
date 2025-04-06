@@ -1,216 +1,224 @@
 document.addEventListener('DOMContentLoaded', setup)
-
-// let userLocation = {latitude: null, longitude: null};
-/* Main setup (Comment in the future*)
-*/
-function setup(){
-
-    /* Display the map object
-    */
-    function updateMap(latitude, longitude){
-        // Using leaftlet to simulate drone and map
- 
-       
-       if(latitude != null &&
-           longitude != null){
-
-            
-            map.setView([latitude, longitude], 13);
-
-            // Add a user marker
-            L.marker([latitude, longitude]).addTo(map)
-            .bindPopup('This is me')
-            .openPopup();
+///****** Fix the comments, kinda bad rn */
 
 
 
-            // Help center or a drone constantly circling
-            let droneLatitude = latitude-0.30;
-            let droneLongitude = longitude-0.50;
+/**
+ * Creation of the drone marker
+ * - Moves the drone to the target (My location)
+ */
+function moveDroneToTarget(map, latitude, longitude){
+    
+    // Help center or a drone constantly circling
+    let droneLatitude = latitude-0.30;
+    let droneLongitude = longitude-0.50;
 
-            const droneIcon = L.icon({
-                iconUrl: 'images/drone.png',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
-                popupAnchor: [0, -32]
-            });
+    const droneHelperIcon = L.icon({
+        iconUrl: 'images/drone.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
 
-            const droneMarker = L.marker([droneLatitude, droneLongitude], {
-                icon: droneIcon
-            }).addTo(map);
+    const droneHelper = L.marker([droneLatitude, droneLongitude], {
+        icon: droneHelperIcon
+    }).addTo(map);
 
-            // const droneCircle = L.circle([(droneLatitude), (droneLongitude)], {
-            //     color: 'green',
-            //     fillColor: '#000',
-            //     fillOpacity: 0.5,
-            //     radius: 1000
-            // }).addTo(map);
-            
-            droneMarker.on('click', ()=>{
-                console.log(`Drone is currently traveling to ${latitude}, ${longitude}`)
-            })
-
-            const targetLatitude = latitude;
-            const targetLongitude = longitude;
-
-
-            function calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; 
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                const distance = R * c; 
-                return distance * 1000; 
-            }
-
-
-            // Test out speed and make sure it doesn't skip the tolerance
-            // const speed = 0.005;
-            const speed = 0.025;
-
-            const tolerance = 0.001;
-
-            // Number of ms that passed on the page
-            // Tracks time between two events
-            let previousTime = performance.now();
-
-            function moveDrone(){
-
-                console.log('Drone is on its way');
-                const currentTime = performance.now();
-                const deltaTime = (currentTime - previousTime) / 1000
-
-                const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
-
-                if (distance <= tolerance) {
-                    console.log("Drone has reached your location and stopped.");
-                    droneMarker.setLatLng([targetLatitude, targetLongitude]);
-                    // droneCircle.setLatLng([targetLatitude, targetLongitude]);
-
-                    
-                } else{
-
-                    const moveDistance = speed * deltaTime
-                    
-                    // Return the new frame
-                    const moveTowardsTarget = (current, target, moveDistance) => {
-                        if (current < target) {
-                            return current + moveDistance; 
-                        } else if (current > target) {
-                            return current - moveDistance; 
-                        }
-                        return current; 
-                    };
-
-                    droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, moveDistance);
-                    droneLongitude = moveTowardsTarget(droneLongitude, targetLongitude, moveDistance);
-                    droneMarker.setLatLng([droneLatitude, droneLongitude])
-                    // droneCircle.setLatLng([droneLatitude, droneLongitude])
-
-                    previousTime = currentTime;
-                    requestAnimationFrame(moveDrone);
-                }
-            }
-       }
-
-       moveDrone();
-  
-   }
-
-    async function fetchEarthquakeData(latitude, longitude, maxradius=100){
-        const earthquakeResponse = await fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${latitude}&longitude=${longitude}&maxradius=${maxradius}`)
-        if (earthquakeResponse.ok){
-            const earthquakeData = await earthquakeResponse.json()
-
-            // Have different instructions for different levels
-
-            earthquakeData.features[0].properties.mag = 2
-
-            const eqHelp = getEarthquakeResponse(earthquakeData.features[0].properties.mag);
-
-            console.log(eqHelp);
-
-            // Simulate giving supplies
-            // We'd need closest police stations and hospitals
-
-            // console.log(earthquakeData.features[0].properties.mag)
-            // if (earthquakeData.features[0].properties.mag < 4){
-            //     console.log(helpAtDifferentLevels[0])
-            // } else if (earthquakeData.features[0].properties.mag >= 4){
-            //     console.log('Help is on the way')
-            // }
-        }
-    }
-
-    // When the button is clicked
-    // -- Clean up into helper method
-    document.getElementById('assistance').addEventListener('click', function(){
-        // alert(`Describe the general location and be specific (Road Signs, Buildings)`);
-        
-        // If there's nothing around the location, then the robot will say ur good
-
-        // console.log(simulateResponses);
-
-        // Get my location
-
-        // Check if object and the position exists
-        console.log(navigator.geolocation)
-        if (navigator.geolocation){
-
-            navigator.geolocation.getCurrentPosition((position) => {
-
-                const latitude = position.coords.latitude;
-                const longitude = position.coords.longitude;
-
-                document.getElementById('location').textContent = `I got yo ass: 
-                    Latitude: ${latitude}, Longitude: ${longitude}`;
-
-                    
-               
-                // Fetch earthquake data
-                fetchEarthquakeData(latitude, longitude);
-
-
-                // Set the global userLocation variable
-                // userLocation.latitude=latitude;
-                // userLocation.longitude=longitude;
-            
-                updateMap(latitude, longitude);
-
-                // Now its going to use the location to find if there's a crucial disaster nearby
-                // If there's nothing then rip u die
-                // If the disaster is bigger then the "drones" will prioritze you
-                // The ai will categorize the severity of the disaster
-
-                // sendLocationToServer(latitude, longitude);
-            }, (error)=> {
-
-                document.getElementById('location').textContent = `You might be offline, 
-                    please turn on the internet!`
-                console.log(error);
-            })
-             
-        } else{
-            // Add proper error handling
-            console.log('Locationdead')
-        }
+    
+    droneHelper.on('click', ()=>{
+        console.log(`Drone is currently traveling to ${latitude}, ${longitude}`)
     })
 
+    const targetLatitude = latitude;
+    const targetLongitude = longitude;
 
 
-    // Display the map
+    // Calcuates disatnce of two points on the surface of a sphere
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; 
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c; 
+        return distance * 1000; 
+    }
+
+
+    // Test out speed and make sure it doesn't skip the tolerance
+    // const speed = 0.005;
+    const speed = 0.025;
+    const tolerance = 0.001;
+
+    // Number of ms that passed on the page
+    // Tracks time between two events
+    let previousTime = performance.now();
+
+    function moveDrone(){
+
+        console.log('Drone is on its way');
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - previousTime) / 1000
+
+        const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
+
+        if (distance <= tolerance) {
+            console.log("Drone has reached your location and stopped.");
+            droneHelper.setLatLng([targetLatitude, targetLongitude]);
+            // droneCircle.setLatLng([targetLatitude, targetLongitude]);
+
+            
+        } else{
+            const moveDistance = speed * deltaTime
+            
+            // Return the new frame
+            const moveTowardsTarget = (current, target, moveDistance) => {
+                if (current < target) {
+                    return current + moveDistance; 
+                } else if (current > target) {
+                    return current - moveDistance; 
+                }
+                return current; 
+            };
+
+            droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, moveDistance);
+            droneLongitude = moveTowardsTarget(droneLongitude, targetLongitude, moveDistance);
+            droneHelper.setLatLng([droneLatitude, droneLongitude])
+            // droneCircle.setLatLng([droneLatitude, droneLongitude])
+
+            previousTime = currentTime;
+            requestAnimationFrame(moveDrone);
+        }
+    }
+        
+    moveDrone();
+}
+
+
+
+/**
+ * Display the updated map that corresponds to my location
+ * @param {*} latitude 
+ * @param {*} longitude 
+ */
+function updateMapToLocation(map, latitude, longitude){
+   if(latitude != null &&
+       longitude != null){
+
+        map.setView([latitude, longitude], 13);
+
+        // Add a user marker
+        L.marker([latitude, longitude]).addTo(map)
+        .bindPopup('This is me')
+        .openPopup();
+
+        // Drone is created and moved to the lat and long given
+        moveDroneToTarget(map, latitude, longitude);
+    }
+}
+
+
+/**
+ * Fetch the earthquake data close to the given lat and long
+ * @param {*} latitude 
+ * @param {*} longitude 
+ * @param {*} maxradius 
+ */
+async function fetchEarthquakeData(latitude, longitude, maxradius=100){
+    const earthquakeResponse = await fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${latitude}&longitude=${longitude}&maxradius=${maxradius}`)
+    if (earthquakeResponse.ok){
+        const earthquakeData = await earthquakeResponse.json()
+
+        // Have different instructions for different levels
+
+        earthquakeData.features[0].properties.mag = 2
+
+        const eqHelp = getEarthquakeResponse(earthquakeData.features[0].properties.mag);
+
+        console.log(eqHelp);
+
+        // Simulate giving supplies
+        // We'd need closest police stations and hospitals
+
+        // console.log(earthquakeData.features[0].properties.mag)
+        // if (earthquakeData.features[0].properties.mag < 4){
+        //     console.log(helpAtDifferentLevels[0])
+        // } else if (earthquakeData.features[0].properties.mag >= 4){
+        //     console.log('Help is on the way')
+        // }
+    }
+}
+
+/**
+ * Retrive the requester's location
+ * @param {*} map 
+ */
+function getLocationAndSendHelp(map){
+    if (navigator.geolocation){
+
+        navigator.geolocation.getCurrentPosition((position) => {
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            document.getElementById('location').textContent = `I got yo ass: 
+                Latitude: ${latitude}, Longitude: ${longitude}`;
+
+                
+            // Fetch earthquake data
+            fetchEarthquakeData(latitude, longitude);
+        
+            // Update the map to the person's location
+            updateMapToLocation(map, latitude, longitude);
+
+            // Now its going to use the location to find if there's a crucial disaster nearby
+            // If there's nothing then rip u die
+            // If the disaster is bigger then the "drones" will prioritze you
+            // The ai will categorize the severity of the disaster
+
+            // sendLocationToServer(latitude, longitude);
+        }, (error)=> {
+
+            document.getElementById('location').textContent = `You might be offline, 
+                please turn on the internet!`
+            console.log(error);
+        })
+         
+    } else{
+        // Add proper error handling
+        console.log('Locationdead')
+    }
+}
+
+/**
+ * Main setup (Comment in the future*)
+ */
+function setup(){
+
+    // Display the original map
     // -- Add a random spawn everytime
+
     const map = L.map('map').setView([51.505, -0.09], 13);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+    // When the button is clicked
+    // -- Clean up into helper method
+    document.getElementById('assistance')
+        .addEventListener('click', getLocationAndSendHelp(map));
+
+
+
 }
 
+
+
+
+// Not sure if these are being used
 const simulateResponses = [
     "Sorry but you're now dead",
     "Please cover your mouth",
@@ -219,7 +227,11 @@ const simulateResponses = [
 ]
 
 
-
+/**
+ * Returns the help in response to the magnitude
+ * @param {*} magnitude 
+ * @returns 
+ */
 function getEarthquakeResponse(magnitude){
     switch(true){
         case(magnitude < 3):
