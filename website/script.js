@@ -64,11 +64,12 @@ function moveDroneToTarget(map, latitude, longitude){
 
         const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
 
+        console.log(distance)
+        console.log(tolerance)
+
         if (distance <= tolerance) {
             console.log("Drone has reached your location and stopped.");
             droneHelper.setLatLng([targetLatitude, targetLongitude]);
-            // droneCircle.setLatLng([targetLatitude, targetLongitude]);
-
             
         } else{
             const moveDistance = speed * deltaTime
@@ -163,7 +164,7 @@ function getLocationAndSendHelp(map){
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
 
-            document.getElementById('location').textContent = `I got yo ass: 
+            document.getElementById('location').textContent = `Location: 
                 Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 
@@ -208,10 +209,7 @@ function setup(){
 
     // When the button is clicked
     // -- Clean up into helper method
-    document.getElementById('assistance')
-        .addEventListener('click', getLocationAndSendHelp(map));
-
-
+    document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
 
 }
 
@@ -235,7 +233,7 @@ const simulateResponses = [
 function getEarthquakeResponse(magnitude){
     switch(true){
         case(magnitude < 3):
-            return "You a pussy. No actions needed";
+            return "No actions needed";
         case(magnitude >=3 && magnitude < 4):
             return "Stay calm, take note of it, and check for updates.";
         case(magnitude >= 4 && magnitude < 5):
