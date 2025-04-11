@@ -1,3 +1,7 @@
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+
 document.addEventListener('DOMContentLoaded', setup)
 ///****** Fix the comments, kinda bad rn */
 
@@ -14,7 +18,8 @@ function moveDroneToTarget(map, latitude, longitude){
     let droneLongitude = longitude-0.50;
 
     const droneHelperIcon = L.icon({
-        iconUrl: 'images/drone.png',
+        iconUrl: '/images/drone.png',
+
         iconSize: [32, 32],
         iconAnchor: [16, 32],
         popupAnchor: [0, -32]
@@ -111,7 +116,24 @@ function updateMapToLocation(map, latitude, longitude){
         map.setView([latitude, longitude], 13);
 
         // Add a user marker
-        L.marker([latitude, longitude]).addTo(map)
+        // const personIcon = L.icon({
+        //     iconUrl: markerIcon,
+        //     shadowUrl: markerShadow,
+        //     iconSize: [25, 41],  
+        //     iconAnchor: [12, 41], 
+        //     popupAnchor: [1, -34], 
+        //     shadowSize: [41, 41] 
+        //   });
+
+        const personIcon = L.icon({
+            iconUrl: '/images/marker.png',
+            iconSize: [32, 32],    
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+
+        L.marker([latitude, longitude], {icon: personIcon}).addTo(map)
         .bindPopup('This is me')
         .openPopup();
 
@@ -168,11 +190,13 @@ function getLocationAndSendHelp(map){
                 Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 
-            // Fetch earthquake data
-            fetchEarthquakeData(latitude, longitude);
+          
         
             // Update the map to the person's location
             updateMapToLocation(map, latitude, longitude);
+
+            // Fetch earthquake data
+            fetchEarthquakeData(latitude, longitude);
 
             // Now its going to use the location to find if there's a crucial disaster nearby
             // If there's nothing then rip u die
@@ -210,10 +234,66 @@ function setup(){
     // When the button is clicked
     // -- Clean up into helper method
     document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
-
+    
+    document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
 }
 
 
+
+// Api call to the AI maybe implement caching too
+const callTheAI = async (message) => {
+    try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        });
+    
+        const data = await response.json();
+    
+        console.log('DATA', data);
+
+        const reply = data.choices?.[0]?.message?.content;
+        console.log('AI says:', reply);
+
+        const newAIMessage = document.createElement('p');
+        newAIMessage.textContent = reply;
+        newAIMessage.classList.add('ai-message');
+        document.getElementById('conversation').appendChild(newAIMessage);
+
+
+        // document.getElementById('response').textContent = reply || 'No response from AI';
+      } catch (error) {
+        console.error('Error talking to AI:', error);
+        document.getElementById('response').textContent = 'Something went wrong';
+    }
+}
+
+
+// Fix the styling and possible add an array or pagination to ...
+// ... not make the chat go on forever
+const handleAIButton =  async (e) => {
+
+    if(e.key === "Enter" && e.target.value){
+        console.log('Hello')
+        e.target.disabled = true;
+        // Display the input field
+        // Display the new user message
+        const newMessage = document.createElement('p');
+        newMessage.textContent = e.target.value
+        newMessage.classList.add('user-message');
+
+        document.getElementById('conversation').appendChild(newMessage);
+
+        await callTheAI(e.target.value);
+
+        e.target.value = '';
+        e.target.disabled = false;
+
+    }
+}
 
 
 // Not sure if these are being used
