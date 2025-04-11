@@ -2,10 +2,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import helmet from 'helmet'
 import path from 'path';
 import { fileURLToPath } from 'url';
-// import fetch from 'node-fetch'; 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,22 +13,9 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-// app.use(helmet());
-  
-// app.use((req, res, next) => {
-//   res.setHeader("Content-Security-Policy", 
-//     "default-src 'self'; " + 
-//     "script-src 'self' https://unpkg.com; " + 
-//     "style-src 'self' 'unsafe-inline' https://unpkg.com; " + 
-//     "img-src 'self' http://localhost:5173; " +
-//     "connect-src 'self';"
-//   );
-//   next();
-// });
 
-// app.use(express.static(path.join(__dirname, '../client/public')));
-// app.use(express.static(path.join(__dirname, '../client/dist')));
-  
+app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
+
   
 app.post('/chat', async (req, res) => {
   const { message } = req.body;
