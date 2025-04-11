@@ -235,20 +235,64 @@ function setup(){
     // -- Clean up into helper method
     document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
     
-    document.getElementById('ai').addEventListener('click', handleAIButton)
+    document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
 }
 
 
-const handleAIButton = () => {
-    console.log('click')
-    fetch('/test')
-        .then(res => res.json())
-        .then(data => {
-            console.log('Response from server:', data.message);
-            document.getElementById('response').textContent = data.message;
-        })
-        .catch(err => console.error('Error:', err));
 
+// Api call to the AI maybe implement caching too
+const callTheAI = async (message) => {
+    try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        });
+    
+        const data = await response.json();
+    
+        console.log('DATA', data);
+
+        const reply = data.choices?.[0]?.message?.content;
+        console.log('AI says:', reply);
+
+        const newAIMessage = document.createElement('p');
+        newAIMessage.textContent = reply;
+        newAIMessage.classList.add('ai-message');
+        document.getElementById('conversation').appendChild(newAIMessage);
+
+
+        // document.getElementById('response').textContent = reply || 'No response from AI';
+      } catch (error) {
+        console.error('Error talking to AI:', error);
+        document.getElementById('response').textContent = 'Something went wrong';
+    }
+}
+
+
+// Fix the styling and possible add an array or pagination to ...
+// ... not make the chat go on forever
+const handleAIButton =  async (e) => {
+
+    if(e.key === "Enter" && e.target.value){
+        console.log('Hello')
+        e.target.disabled = true;
+        // Display the input field
+        // Display the new user message
+        const newMessage = document.createElement('p');
+        newMessage.textContent = e.target.value
+        newMessage.classList.add('user-message');
+
+        document.getElementById('conversation').appendChild(newMessage);
+
+        await callTheAI(e.target.value);
+
+        e.target.value = '';
+        e.target.disabled = false;
+
+    }
 }
 
 
