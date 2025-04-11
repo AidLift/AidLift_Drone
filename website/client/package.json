@@ -5,7 +5,7 @@
   "main": "script.js",
   "scripts": {
     "dev": "vite",
-    "build" : "vite build",
+    "build": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,5 +13,8 @@
   "license": "ISC",
   "devDependencies": {
     "vite": "^6.2.6"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
   }
 }
