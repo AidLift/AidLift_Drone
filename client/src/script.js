@@ -243,7 +243,9 @@ function setup(){
 // Api call to the AI maybe implement caching too
 const callTheAI = async (message) => {
     try {
-        const response = await fetch('/api/chat', {
+        // const response = await fetch('/api/chat', {
+        const response = await fetch('https://aidlift-drone-backend.onrender.com/chat', {
+
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
