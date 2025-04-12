@@ -4,7 +4,7 @@ Project Overview
 AidLift is an innovative AI-powered autonomous drone system designed to revolutionize emergency response and humanitarian aid during natural disasters.
 
 Mission
-To enhance disaster relief efforts by providing:
+To enhance fire relief efforts by providing:
 
 
   > Rapid situational assessment
