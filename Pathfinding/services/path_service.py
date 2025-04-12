@@ -1,5 +1,8 @@
-from ..algorithms.a_star import AStar
-from ..models.bc_grid import BCGrid
+# from ..algorithms.a_star import AStar
+# from ..models.bc_grid import BCGrid
+
+from algorithms.a_star import AStar
+from models.bc_grid import BCGrid
 
 class PathService:
     def __init__(self):

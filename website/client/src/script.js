@@ -6,17 +6,79 @@ document.addEventListener('DOMContentLoaded', setup)
 ///****** Fix the comments, kinda bad rn */
 
 
+async function getBestHospitalPath(latitude, longitude){
+    try {
+        const res = await fetch('http://192.168.2.135:5000/detect-fire', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                latitude: latitude,
+                longitude: longitude
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error(`Server responded with status ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log('Fire detection response:', data);
+        return data;
+    } catch (err) {
+        console.error('Error generating path:', err);
+        return null;
+    }
+}
 
 /**
  * Creation of the drone marker
  * - Moves the drone to the target (My location)
+ * 
+ * Maybe change the name to get assistance and moveDroneToTarget
+ * to the functions below
  */
-function moveDroneToTarget(map, latitude, longitude){
-    
-    // Help center or a drone constantly circling
+async function moveDroneToTarget(map, latitude, longitude, nearbyFires, range = 70000){
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
+    let fireLat = null
+    let fireLong = null
+
+
+    const targetFire = nearbyFires.find(fire => {
+        const fireDistance = calculateDistance(droneLatitude, droneLongitude,
+            fire.latitude, fire.longitude);
+
+        console.log(fireDistance);
+
+        fireLat = fire.latitude;
+        fireLong = fire.longitude;
+        return fireDistance <= range
+
+    });
+
+    if (!targetFire) {
+        console.log("❌ No fires are within range. Drone will not be deployed.");
+        return;
+    }
+
+    console.log(`🔥 Fire is within ${range}m. Deploying drone...`);
+        
+
+    // Generate the best path for hospital//
+
+    if(fireLat && fireLong){
+        console.log('lat',fireLat)
+        console.log('long',fireLong)
+
+        const hospitalPath = await getBestHospitalPath(fireLat, fireLong);
+        console.log('HOSPITALPATH',hospitalPath);
+    }
+
+    // *****
+            
     const droneHelperIcon = L.icon({
         iconUrl: '/images/drone.png',
 
@@ -37,21 +99,6 @@ function moveDroneToTarget(map, latitude, longitude){
     const targetLatitude = latitude;
     const targetLongitude = longitude;
 
-
-    // Calcuates disatnce of two points on the surface of a sphere
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c; 
-        return distance * 1000; 
-    }
-
-
     // Test out speed and make sure it doesn't skip the tolerance
     // const speed = 0.005;
     const speed = 0.025;
@@ -69,8 +116,8 @@ function moveDroneToTarget(map, latitude, longitude){
 
         const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
 
-        console.log(distance)
-        console.log(tolerance)
+        // console.log(distance)
+        // console.log(tolerance)
 
         if (distance <= tolerance) {
             console.log("Drone has reached your location and stopped.");
@@ -100,31 +147,38 @@ function moveDroneToTarget(map, latitude, longitude){
     }
         
     moveDrone();
+
+
+    // Calcuates distance of two points on the surface of a sphere
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; 
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c; 
+        return distance * 1000; 
+    }
+
 }
 
 
 
 /**
- * Display the updated map that corresponds to my location
+ * Updates the map with person's location, nearby hospitals, nearby fires
  * @param {*} latitude 
  * @param {*} longitude 
  */
-function updateMapToLocation(map, latitude, longitude){
+function updateMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals){
    if(latitude != null &&
        longitude != null){
 
+        // Set new map view
         map.setView([latitude, longitude], 13);
 
-        // Add a user marker
-        // const personIcon = L.icon({
-        //     iconUrl: markerIcon,
-        //     shadowUrl: markerShadow,
-        //     iconSize: [25, 41],  
-        //     iconAnchor: [12, 41], 
-        //     popupAnchor: [1, -34], 
-        //     shadowSize: [41, 41] 
-        //   });
-
+        // Define the person's marker
         const personIcon = L.icon({
             iconUrl: '/images/marker.png',
             iconSize: [32, 32],    
@@ -137,11 +191,80 @@ function updateMapToLocation(map, latitude, longitude){
         .bindPopup('This is me')
         .openPopup();
 
+
+        // Define the fire markers
+        const fireDefaultIcon = L.icon({
+            iconUrl: '/images/fire.jpg',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+        const fireIntenseIcon = L.icon({
+            iconUrl: '/images/fireIntense.jpg',
+            iconSize: [60, 60],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+
+        for (const fire of nearbyFires){
+            let fireIcon = fireDefaultIcon
+
+            console.log(fire.intensity);
+
+            if(fire.intensity > 4){
+                fireIcon = fireIntenseIcon
+            }
+
+            const fireMarker = L.marker([fire.latitude, fire.longitude], {
+                icon: fireIcon
+            }).addTo(map);
+
+        }
+
+        // Define the hospital markers
+        const hospitalIcon = L.icon({
+            iconUrl: '/images/hospital.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+        for (const hospital of hospitals){
+            const hospitalMarker = L.marker([hospital.lat, hospital.lon], {
+                icon: hospitalIcon
+            }).addTo(map);
+        }
+        
+
         // Drone is created and moved to the lat and long given
-        moveDroneToTarget(map, latitude, longitude);
+        document.getElementById('assistance').addEventListener('click', () => moveDroneToTarget(map, latitude, longitude, nearbyFires));
+
     }
 }
 
+async function fetchNearbyHospitals(latitude, longitude, radius = 10000){
+
+    const query = `
+        [out:json];
+        node["amenity"="hospital"](around:${radius},${latitude},${longitude});
+        out;
+    `;
+
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query,
+    });
+
+    if (response.ok){
+        const data = await response.json();
+        return data.elements.map(hospital => ({
+            name: hospital.tags?.name || "Unnamed Hospital",
+            lat: hospital.lat,
+            lon: hospital.lon,
+        }));
+    }
+
+}
 
 /**
  * Fetch the earthquake data close to the given lat and long
@@ -174,14 +297,34 @@ async function fetchEarthquakeData(latitude, longitude, maxradius=100){
     }
 }
 
+// Spawn in random fires
+function generateNearbyFires(lat, lon, count = 10) {
+    const fires = [];
+
+    for (let i = 0; i < count; i++) {
+        const latOffset = (Math.random() - 0.5) * 0.02;
+        const lonOffset = (Math.random() - 0.5) * 0.02;
+
+        const intensity = Math.floor(Math.random() * 5) + 1
+        fires.push({
+            latitude: lat + latOffset,
+            longitude: lon + lonOffset,
+            intensity: intensity
+        });
+    }
+
+    return fires;
+}
+
+
 /**
- * Retrive the requester's location
+ * Retrive the all the surroundings, location, fires, hospitals
  * @param {*} map 
  */
-function getLocationAndSendHelp(map){
+async function retrieveSurroundings(map){
     if (navigator.geolocation){
 
-        navigator.geolocation.getCurrentPosition((position) => {
+        navigator.geolocation.getCurrentPosition(async (position) => {
 
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
@@ -189,14 +332,19 @@ function getLocationAndSendHelp(map){
             document.getElementById('location').textContent = `Location: 
                 Latitude: ${latitude}, Longitude: ${longitude}`;
 
-                
-          
-        
+            const nearbyFires = generateNearbyFires(latitude, longitude);
+
+            // Fetch the nearby hospitals (Performance is kinda ehh)
+            const hospitals = await fetchNearbyHospitals(latitude, longitude);
+            console.log(hospitals);
+
             // Update the map to the person's location
-            updateMapToLocation(map, latitude, longitude);
+            updateMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals);
 
             // Fetch earthquake data
             fetchEarthquakeData(latitude, longitude);
+
+
 
             // Now its going to use the location to find if there's a crucial disaster nearby
             // If there's nothing then rip u die
@@ -219,8 +367,13 @@ function getLocationAndSendHelp(map){
 
 /**
  * Main setup (Comment in the future*)
+ * Gonna have to restructure everything
  */
 function setup(){
+
+    // Could maybe display a game or a loading screen in the wait time
+    // Instead of boring map
+
 
     // Display the original map
     // -- Add a random spawn everytime
@@ -231,10 +384,13 @@ function setup(){
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+    // Get person's location
+    retrieveSurroundings(map);
+
     // When the button is clicked
-    // -- Clean up into helper method
-    document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
+    // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
     
+    // AI help chat
     document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
 }
 
@@ -244,7 +400,7 @@ function setup(){
 const callTheAI = async (message) => {
     try {
         // const response = await fetch('/api/chat', {
-        const response = await fetch('https://aidlift-drone-backend.onrender.com/chat', {
+        const response = await fetch('/chat', {
 
           method: 'POST',
           headers: {
