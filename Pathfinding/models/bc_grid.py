@@ -3,45 +3,43 @@ import numpy as np
 from pathlib import Path
 
 
-config ={
-    "bounds": {
-      "min_lat": 48.0,
-      "max_lat": 60.0,
-      "min_lon": -139.0,
-      "max_lon": -114.0
-    },
-    "dimensions": {
-      "width": 500,
-      "height": 600
-    }
-}
-hospitals=[
-    [420, 110], [300, 200], [200, 300], [100, 400]
-  ]
-obstacles=[
-    [50,50], [150,150], [250,250], [350,350], [450,450]
-  ]
-
 class BCGrid:
-    # def __init__(self, data_dir="data/bc_grid"):
-    #     self.load_config(Path(data_dir) / "grid_config.json")
-    #     self.load_hospitals(Path(data_dir) / "hospitals.json")
-    #     self.load_obstacles(Path(data_dir) / "obstacles.json")
-    #     self._initialize_grid()
+    def __init__(self, data_dir="data/bc_grid"):
+        self.data_dir = Path(data_dir).resolve()
+        self.grid = None
+       
 
-
-    def __init__(self, data_dir=None):
-        # Pass the data directly
-        self.load_config(config)
-        self.load_hospitals(hospitals)
-        self.load_obstacles(obstacles)
+    def load(self):
+        """Method to load the config, hospitals, and obstacles and initialize the grid"""        
+        config_path = self.data_dir / "grid.config.json"
+        hospitals_path = self.data_dir / "hospitals.json"
+        obstacles_path = self.data_dir / "obstacles.json"
+        
+        # Load all necessary data
+        self.load_config(self._load_json(config_path))
+        self.load_hospitals(self._load_json(hospitals_path))
+        self.load_obstacles(self._load_json(obstacles_path))
+        
+        # Initialize the grid after loading all data
         self._initialize_grid()
+        return True
 
 
+
+    def _load_json(self, path):
+        if not path.exists():
+            print(f"❌ File not found: {path}")
+            return []
+
+        print(f"📂 Loading file: {path}")
+        with open(path, 'r') as f:
+            return json.load(f)
+        
 
     def _initialize_grid(self):
         """Create grid with hospitals and obstacles"""
         self.grid = np.zeros((self.height, self.width), dtype=np.uint8)
+        print('HOSPI',self.hospitals)
         
         # 0=empty, 1=obstacle, 2=hospital, 3=fire
         for x, y in self.hospitals:
@@ -67,6 +65,7 @@ class BCGrid:
     #         self.obstacles = [tuple(o) for o in json.load(f)]
 
 
+
     def load_config(self, config):
         """Load grid configuration from the passed dictionary"""
         self.width = config["dimensions"]["width"]
@@ -75,7 +74,20 @@ class BCGrid:
     
     def load_hospitals(self, hospitals):
         """Load hospitals from the passed list"""
-        self.hospitals = [tuple(h) for h in hospitals]
+        # self.hospitals = [tuple(h) for h in hospitals]
+        print('Loading hosps')
+        self.hospitals = []
+        for hosp in hospitals[1:]: 
+            name = hosp['name']
+            lat = hosp['lat']
+            lon = hosp['lon']
+            
+            x, y = self.geo_to_grid(float(lat), float(lon))
+            print('AFTER GEO')
+
+            self.hospitals.append((x, y))
+
+        
     
     def load_obstacles(self, obstacles):
         """Load obstacles from the passed list"""
@@ -108,3 +120,24 @@ class BCGrid:
                 nearest = (hx, hy)
         
         return nearest
+    
+    def geo_to_grid(self, lat, lon):
+        """Convert geographic coordinates to grid coordinates"""
+
+        print('Inside geo')
+        min_lat = self.bounds['min_lat']
+        max_lat = self.bounds['max_lat']
+        min_lon = self.bounds['min_lon']
+        max_lon = self.bounds['max_lon']
+
+        # Normalize lat/lon to 0-1 range
+        x_ratio = (lon - min_lon) / (max_lon - min_lon)
+        y_ratio = (lat - min_lat) / (max_lat - min_lat)
+
+        # Flip Y because top-left corner is (0,0)
+        y_ratio = 1 - y_ratio
+
+        x = int(x_ratio * self.width)
+        y = int(y_ratio * self.height)
+
+        return x, y
