@@ -2,3 +2,51 @@
     height: 700px;
     width:  700px;
 }
+body {
+    background-color: #121212; /* dark mode example */
+    color: #e0e0e0; /* text color */
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 16px;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00bcd4;
+  }
+  
+  button {
+    background-color: #000000;
+    color: rgb(235, 235, 235);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #0097a7;
+  }
+  
+  .container {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .ai-container {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 15vh;
+  }
+  
+  .centered-heading {
+    text-align: center;
+  }
+  
+  
