@@ -4,11 +4,17 @@ import 'leaflet/dist/leaflet.css';
 
 document.addEventListener('DOMContentLoaded', setup)
 ///****** Fix the comments, kinda bad rn */
+// Organize the code
+// Also fix location might be a bit wacky (might be vpn though)
+// -- Make assistance button non clickable when loading
+// - Also add loading screen
 
 
+// Change name maybe
 async function getBestHospitalPath(latitude, longitude){
     try {
-        const res = await fetch('http://192.168.2.135:5000/detect-fire', {
+        // const res = await fetch('http://192.168.2.135:5000/detect-fire', {
+        const res = await fetch('http://10.230.123.44:5000/detect-fire', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -43,37 +49,36 @@ async function moveDroneToTarget(map, latitude, longitude, nearbyFires, range = 
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
-    let fireLat = null
-    let fireLong = null
-
-
-    const targetFire = nearbyFires.find(fire => {
-        const fireDistance = calculateDistance(droneLatitude, droneLongitude,
+    let closestDistance = Infinity
+    let closestFire = null
+    
+    // Finds the closest fires with the range
+    for(const fire of nearbyFires){
+        const fireDistance = calculateDistance(latitude, longitude,
             fire.latitude, fire.longitude);
 
-        console.log(fireDistance);
+        if (fireDistance <= range && fireDistance < closestDistance) {
+            closestDistance = fireDistance;
+            closestFire = fire;
+        }
+    }
 
-        fireLat = fire.latitude;
-        fireLong = fire.longitude;
-        return fireDistance <= range
 
-    });
-
-    if (!targetFire) {
+    if (!closestFire) {
         console.log("❌ No fires are within range. Drone will not be deployed.");
         return;
     }
 
     console.log(`🔥 Fire is within ${range}m. Deploying drone...`);
-        
+    console.log('Closest fire is ',closestFire)
 
     // Generate the best path for hospital//
 
-    if(fireLat && fireLong){
-        console.log('lat',fireLat)
-        console.log('long',fireLong)
+    if(closestFire.latitude && closestFire.longitude){
+        console.log('lat',closestFire.latitude)
+        console.log('long',closestFire.longitude)
 
-        const hospitalPath = await getBestHospitalPath(fireLat, fireLong);
+        const hospitalPath = await getBestHospitalPath(closestFire.latitude, closestFire.longitude);
         console.log('HOSPITALPATH',hospitalPath);
     }
 
@@ -109,8 +114,6 @@ async function moveDroneToTarget(map, latitude, longitude, nearbyFires, range = 
     let previousTime = performance.now();
 
     function moveDrone(){
-
-        console.log('Drone is on its way');
         const currentTime = performance.now();
         const deltaTime = (currentTime - previousTime) / 1000
 
@@ -171,7 +174,7 @@ async function moveDroneToTarget(map, latitude, longitude, nearbyFires, range = 
  * @param {*} latitude 
  * @param {*} longitude 
  */
-function updateMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals){
+function loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals){
    if(latitude != null &&
        longitude != null){
 
@@ -242,12 +245,17 @@ function updateMapWithSurroundings(map, latitude, longitude, nearbyFires, hospit
     }
 }
 
-async function fetchNearbyHospitals(latitude, longitude, radius = 10000){
 
+// Fetch the nearby hospitals
+async function fetchNearbyHospitals(latitude, longitude, radius = 10000) {
     const query = `
         [out:json];
-        node["amenity"="hospital"](around:${radius},${latitude},${longitude});
-        out;
+        (
+            node["amenity"="hospital"](around:${radius},${latitude},${longitude});
+            way["amenity"="hospital"](around:${radius},${latitude},${longitude});
+            relation["amenity"="hospital"](around:${radius},${latitude},${longitude});
+        );
+        out center;
     `;
 
     const response = await fetch("https://overpass-api.de/api/interpreter", {
@@ -255,47 +263,34 @@ async function fetchNearbyHospitals(latitude, longitude, radius = 10000){
         body: query,
     });
 
-    if (response.ok){
+    if (response.ok) {
         const data = await response.json();
-        return data.elements.map(hospital => ({
-            name: hospital.tags?.name || "Unnamed Hospital",
-            lat: hospital.lat,
-            lon: hospital.lon,
-        }));
-    }
 
-}
+        const hospitals = data.elements
+            .map(hospital => {
+                const lat = hospital.lat ?? hospital.center?.lat;
+                const lon = hospital.lon ?? hospital.center?.lon;
 
-/**
- * Fetch the earthquake data close to the given lat and long
- * @param {*} latitude 
- * @param {*} longitude 
- * @param {*} maxradius 
- */
-async function fetchEarthquakeData(latitude, longitude, maxradius=100){
-    const earthquakeResponse = await fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${latitude}&longitude=${longitude}&maxradius=${maxradius}`)
-    if (earthquakeResponse.ok){
-        const earthquakeData = await earthquakeResponse.json()
+                if (lat !== undefined && lon !== undefined) {
+                    return {
+                        name: hospital.tags?.name || "Unnamed Hospital",
+                        lat,
+                        lon,
+                    };
+                }
 
-        // Have different instructions for different levels
+                return null;
+            })
+            .filter(hospital => hospital !== null);
 
-        earthquakeData.features[0].properties.mag = 2
-
-        const eqHelp = getEarthquakeResponse(earthquakeData.features[0].properties.mag);
-
-        console.log(eqHelp);
-
-        // Simulate giving supplies
-        // We'd need closest police stations and hospitals
-
-        // console.log(earthquakeData.features[0].properties.mag)
-        // if (earthquakeData.features[0].properties.mag < 4){
-        //     console.log(helpAtDifferentLevels[0])
-        // } else if (earthquakeData.features[0].properties.mag >= 4){
-        //     console.log('Help is on the way')
-        // }
+        return hospitals;
+    } else {
+        console.error("Failed to fetch hospitals:", response.statusText);
+        return [];
     }
 }
+
+
 
 // Spawn in random fires
 function generateNearbyFires(lat, lon, count = 10) {
@@ -335,14 +330,30 @@ async function retrieveSurroundings(map){
             const nearbyFires = generateNearbyFires(latitude, longitude);
 
             // Fetch the nearby hospitals (Performance is kinda ehh)
+            // Doesn't fetch all the hospitals -- fix this
+            // Cache this on load up or maybe make it global
             const hospitals = await fetchNearbyHospitals(latitude, longitude);
-            console.log(hospitals);
+            console.log('HOSPITALS',hospitals);
 
-            // Update the map to the person's location
-            updateMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals);
+            // Sends the hospitals over the backend
+            // Write it over to a json
+            
+            // --- Make it that it doesn't reload everytime page reloads
+            fetch('http://192.168.2.135:5000/save-hospitals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  hospitals: hospitals
+                })
+            });
+
+            console.log('Files saved to json')
+
+            // Uoad the map with the markers
+            loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals);
 
             // Fetch earthquake data
-            fetchEarthquakeData(latitude, longitude);
+            // fetchEarthquakeData(latitude, longitude);
 
 
 
@@ -365,34 +376,7 @@ async function retrieveSurroundings(map){
     }
 }
 
-/**
- * Main setup (Comment in the future*)
- * Gonna have to restructure everything
- */
-function setup(){
 
-    // Could maybe display a game or a loading screen in the wait time
-    // Instead of boring map
-
-
-    // Display the original map
-    // -- Add a random spawn everytime
-
-    const map = L.map('map').setView([51.505, -0.09], 13);
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    // Get person's location
-    retrieveSurroundings(map);
-
-    // When the button is clicked
-    // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
-    
-    // AI help chat
-    document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
-}
 
 
 
@@ -426,14 +410,11 @@ const callTheAI = async (message) => {
         document.getElementById('response').textContent = 'Something went wrong';
     }
 }
-
-
 // Fix the styling and possible add an array or pagination to ...
 // ... not make the chat go on forever
 const handleAIButton =  async (e) => {
 
     if(e.key === "Enter" && e.target.value){
-        console.log('Hello')
         e.target.disabled = true;
         // Display the input field
         // Display the new user message
@@ -450,15 +431,6 @@ const handleAIButton =  async (e) => {
 
     }
 }
-
-
-// Not sure if these are being used
-const simulateResponses = [
-    "Sorry but you're now dead",
-    "Please cover your mouth",
-    "There's a tornado, run away",
-    "I will provide you with assistance"
-]
 
 
 /**
@@ -492,5 +464,86 @@ function getEarthquakeResponse(magnitude){
             return `•    Get to an open area away from buildings and power lines.
     •    If near the coast, immediately move to higher ground in case of a tsunami.`
         
+    }
+}
+
+/**
+ * Main setup (Comment in the future*)
+ * Gonna have to restructure everything
+ */
+function setup(){
+    // Could maybe display a game or a loading screen in the wait time
+    // Instead of boring map
+
+    // Display the original map
+    // -- Add a random spawn everytime
+
+    const map = L.map('map').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Get person's location
+    retrieveSurroundings(map);
+
+    // When the button is clicked
+    // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
+    
+    // AI help chat
+    document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
+}
+
+
+
+
+
+
+
+
+
+
+// ==================== UNUSED CODE BELOW ====================
+// These functions are not currently used but might be helpful later
+
+
+
+// Not sure if these are being used
+const simulateResponses = [
+    "Sorry but you're now dead",
+    "Please cover your mouth",
+    "There's a tornado, run away",
+    "I will provide you with assistance"
+]
+
+
+/**
+ * Fetch the earthquake data close to the given lat and long
+ * @param {*} latitude 
+ * @param {*} longitude 
+ * @param {*} maxradius 
+ */
+async function fetchEarthquakeData(latitude, longitude, maxradius=100){
+    const earthquakeResponse = await fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${latitude}&longitude=${longitude}&maxradius=${maxradius}`)
+    if (earthquakeResponse.ok){
+        const earthquakeData = await earthquakeResponse.json()
+
+        // Have different instructions for different levels
+
+        earthquakeData.features[0].properties.mag = 2
+
+        const eqHelp = getEarthquakeResponse(earthquakeData.features[0].properties.mag);
+
+        console.log(eqHelp);
+
+        // Simulate giving supplies
+        // We'd need closest police stations and hospitals
+
+        // console.log(earthquakeData.features[0].properties.mag)
+        // if (earthquakeData.features[0].properties.mag < 4){
+        //     console.log(helpAtDifferentLevels[0])
+        // } else if (earthquakeData.features[0].properties.mag >= 4){
+        //     console.log('Help is on the way')
+        // }
     }
 }
