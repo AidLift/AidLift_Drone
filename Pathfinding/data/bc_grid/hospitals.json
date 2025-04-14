@@ -1,0 +1,122 @@
+[
+    {
+        "name": "CLSC de Mercier-Est-Anjou",
+        "lat": 45.6117513,
+        "lon": -73.5270569
+    },
+    {
+        "name": "CLSC Le Plateau-Mont-Royal",
+        "lat": 45.5364634,
+        "lon": -73.573798
+    },
+    {
+        "name": "CHUM",
+        "lat": 45.5116095,
+        "lon": -73.5567709
+    },
+    {
+        "name": "Hopital de r\u00e9adaptation Villa Medica",
+        "lat": 45.5149687,
+        "lon": -73.5687027
+    },
+    {
+        "name": "H\u00f4pital Pierre-Boucher",
+        "lat": 45.5378061,
+        "lon": -73.4592445
+    },
+    {
+        "name": "H\u00f4tel-Dieu (CHUM)",
+        "lat": 45.5142927,
+        "lon": -73.5787947
+    },
+    {
+        "name": "CLSC Hochelaga-Maisonneuve",
+        "lat": 45.5514576,
+        "lon": -73.5411306
+    },
+    {
+        "name": "Institut universitaire en sant\u00e9 mentale de Montr\u00e9al",
+        "lat": 45.5888051,
+        "lon": -73.5306201
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5747218,
+        "lon": -73.5769004
+    },
+    {
+        "name": "H\u00f4pital Notre-Dame",
+        "lat": 45.5256657,
+        "lon": -73.5625139
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5401972,
+        "lon": -73.5768045
+    },
+    {
+        "name": "H\u00f4pital Santa Cabrini",
+        "lat": 45.5801019,
+        "lon": -73.5719278
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5783947,
+        "lon": -73.5468951
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.6562993,
+        "lon": -73.5350141
+    },
+    {
+        "name": "H\u00f4pital Jean-Talon",
+        "lat": 45.5459549,
+        "lon": -73.6095003
+    },
+    {
+        "name": "CLSC de Villeray",
+        "lat": 45.5514719,
+        "lon": -73.6212426
+    },
+    {
+        "name": "H\u00f4pital Rivi\u00e8re-des-Prairies",
+        "lat": 45.6233668,
+        "lon": -73.6120752
+    },
+    {
+        "name": "H\u00f4pital Fleury",
+        "lat": 45.5718413,
+        "lon": -73.6500195
+    },
+    {
+        "name": "CLSC de Montr\u00e9al-Nord",
+        "lat": 45.6072148,
+        "lon": -73.6201487
+    },
+    {
+        "name": "Centre hospitalier Jacques-Viger",
+        "lat": 45.5146726,
+        "lon": -73.5553963
+    },
+    {
+        "name": "Hopital Marie-Clarac",
+        "lat": 45.5909419,
+        "lon": -73.6492512
+    },
+    {
+        "name": "CHUM - Centre Hospitalier de l'Universit\u00e9 de Montr\u00e9al",
+        "lat": 45.5112797,
+        "lon": -73.5570291
+    },
+    {
+        "name": "Institut-H\u00f4pital neurologique de Montr\u00e9al",
+        "lat": 45.5092004,
+        "lon": -73.5812281
+    },
+    {
+        "name": "H\u00f4pital Maisonneuve-Rosemont",
+        "lat": 45.5757845,
+        "lon": -73.5597631
+    }
+]
