@@ -16,7 +16,19 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
 
-  
+
+app.post('/hospitals', (req, res) => {
+  const { hospitals } = req.body;
+
+  if (!hospitals || !Array.isArray(hospitals)) {
+    return res.status(400).json({ error: 'Invalid hospital data' });
+  }
+
+  console.log('Received hospitals:', hospitals);
+
+  res.status(200).json({ message: 'Hospitals received successfully', count: hospitals.length });
+});
+
 app.post('/chat', async (req, res) => {
   const { message } = req.body;
   
