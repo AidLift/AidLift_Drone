@@ -7,11 +7,16 @@ from models.bc_grid import BCGrid
 class PathService:
     def __init__(self):
         self.grid = BCGrid()
+
     
     def process_detection(self, lat, lon):
         """Main processing pipeline"""
+
+        if not self.grid.load():
+            return {"error": "Grid is not properly loaded, data is missing."}
+
         x, y = self._latlon_to_grid(lat, lon)
-        
+   
         if not self._validate_coordinates(x, y):
             return {"error": "Coordinates outside BC grid"}
         
