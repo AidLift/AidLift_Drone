@@ -1,6 +1,17 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+from services.path_service import PathService
+
+path_service = PathService()
 
 app = Flask(__name__)
+
+CORS(app)
+
+@app.route('/')
+def home():
+    return "Hello, world!"
 
 @app.route('/detect-fire', methods=['POST'])
 def detect_fire():
@@ -22,7 +33,16 @@ def detect_fire():
                 "path": [[46,67], [47,68]]
             }
         }
-        return jsonify(response)
+
+
+        lat = data['latitude']
+        lon = data['longitude']
+
+        result = path_service.process_detection(lat, lon)
+        
+        # return jsonify(response)
+        return jsonify(result)
+    
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
