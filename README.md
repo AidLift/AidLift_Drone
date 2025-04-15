@@ -47,3 +47,10 @@ KEY Features
 
 
 
+ATTRIBUTIONS
+
+    Drone Gif:
+    https://dribbble.com/shots/15287542-Drone-Animated-Gif
+
+    Hospital Icon:
+    https://www.freepik.com/icon/hospital_4521422#fromView=keyword&page=1&position=27&uuid=3c30d28c-ceee-4c0b-9745-ac8267f7dd91

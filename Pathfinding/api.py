@@ -50,11 +50,38 @@ def save_hospitals():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/save-grid-info', methods=['POST'])
+def save_grid_info():
+    try:
+        grid_data = request.get_json()
+        
+        bounds = grid_data['bounds']
+        dimensions = grid_data['dimensions']
+
+        # Define where to save the grid info
+        save_path = Path("data/bc_grid")
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        # Write to grid_info.json file
+        with open(save_path / 'grid.config.json', 'w') as f:
+            json.dump(grid_data, f, indent=4)
+        
+    
+        return jsonify({
+            "message": "Grid info saved successfully!",
+            "bounds": bounds,
+            "dimensions": dimensions
+        }), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
 @app.route('/detect-fire', methods=['POST'])
 def detect_fire():
     try:
         data = request.get_json()
-        print(f"Received data: {data}")  # Debug print
+        # print(f"Received data: {data}") 
         
         # Validate input
         if not data or 'latitude' not in data or 'longitude' not in data:

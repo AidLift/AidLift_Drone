@@ -12,22 +12,24 @@ document.addEventListener('DOMContentLoaded', setup)
 
 // Write these coords and send them (or read them) 
 // - Make the app more compatible around the world
-const myObj ={
-    "bounds": {
-      "min_lat": 45.3,
-      "max_lat": 45.7,
-      "min_lon": -73.9,
-      "max_lon": -73.4
-    },
-    "dimensions": {
-      "width": 500,
-      "height": 500
-    }
-  }
+// const myObj ={
+//     "bounds": {
+//       "min_lat": 45.3,
+//       "max_lat": 45.7,
+//       "min_lon": -73.9,
+//       "max_lon": -73.4
+//     },
+//     "dimensions": {
+//       "width": 500,
+//       "height": 500
+//     }
+//   }
 
-function gridToLatLon(coords) {
-    const { min_lat, max_lat, min_lon, max_lon } = myObj.bounds;
-    const { width, height } = myObj.dimensions;
+  
+
+function gridToLatLon(coords, gridData) {
+    const { min_lat, max_lat, min_lon, max_lon } = gridData.bounds;
+    const { width, height } = gridData.dimensions;
   
     const lat = max_lat - (coords[1] / height) * (max_lat - min_lat);
     const lon = min_lon + (coords[0] / width) * (max_lon - min_lon);
@@ -88,15 +90,22 @@ async function detectFireAndGetHospitalPath(latitude, longitude){
  * @param {number} latitude - The latitude of the current fire location.
  * @param {number} longitude - The longitude of the current fire location.
  */
-async function displayFireAndHospitalPath(map, latitude, longitude, hospitals){
+async function displayFireAndHospitalPath(map, latitude, longitude, hospitals, gridData){
     const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude);
 
+    // console.log('GRID DATA', gridData);
     const pathLatLon = hospitalPath.path.map(([x, y]) =>
-        L.latLng(...gridToLatLon([x, y]))
+        L.latLng(...gridToLatLon([x, y], gridData))
     );
 
-    L.polyline(pathLatLon, { color: 'red' }).addTo(map);
+    // L.polyline(pathLatLon, { color: 'red' }).addTo(map);
 
+    L.polyline(pathLatLon, { 
+        color: 'red',
+        weight: 5,
+        opacity: 0.7,
+        dashArray: '5, 10'
+    }).addTo(map);
 
     // Display the fire on the map
     const fireDefaultIcon = L.icon({
@@ -144,7 +153,7 @@ async function displayFireAndHospitalPath(map, latitude, longitude, hospitals){
  * @param {Array<Object>} hospitals - An array of hospital objects with `lat`, `lon`, and `name` properties.
  * @param {number} [range=70000] - Optional. The maximum distance (in meters) to consider when searching for the nearest fire (currently unused).
  */
-async function requestAssistance(map, latitude, longitude, nearbyFires, hospitals, range = 70000){
+async function requestAssistance(map, latitude, longitude, nearbyFires, hospitals, gridData, range = 70000){
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
@@ -188,8 +197,8 @@ async function requestAssistance(map, latitude, longitude, nearbyFires, hospital
 
     // If there is confirmation of a fire then the steps below will occur
     // ===========If Fire is Confirmed==============
-    
-    await displayFireAndHospitalPath(map, latitude, longitude, hospitals);
+
+    await displayFireAndHospitalPath(map, latitude, longitude, hospitals, gridData);
     // ***** Drone stuff -- try to send just one drone
             
     const droneHelperIcon = L.icon({
@@ -289,12 +298,13 @@ async function requestAssistance(map, latitude, longitude, nearbyFires, hospital
  * @param {Array<Object>} nearbyFires - Array of nearby fire data (currently unused)
  * @param {Array<Object>} hospitals - Array of nearby hospital data with lat/lon fields
  */
-function initializeMapWithData(latitude, longitude, nearbyFires, hospitals){
+function initializeMapWithData(latitude, longitude, nearbyFires, hospitals, gridData){
    if(latitude != null &&
        longitude != null){
 
         // Create the map
-        const map = L.map('map').setView([0, 0], 13);
+        const map = L.map('map').setView([latitude, longitude], 13);
+        console.log(map)
 
         // Remove loading screen
         const loading = document.querySelector('.loading-container');
@@ -307,7 +317,9 @@ function initializeMapWithData(latitude, longitude, nearbyFires, hospitals){
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        map.setView([latitude, longitude], 13);
+        // Enable the help button as soon as possible
+        const button = document.getElementById('assistance');
+        button.disabled = false;
 
         // Define the person's marker
         const personIcon = L.icon({
@@ -367,7 +379,7 @@ function initializeMapWithData(latitude, longitude, nearbyFires, hospitals){
         }
         
         // Drone is created and moved to the lat and long given
-        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, nearbyFires, hospitals));
+        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, nearbyFires, hospitals, gridData));
 
     }
 }
@@ -438,6 +450,22 @@ function generateNearbyFires(lat, lon, count = 10) {
     return fires;
 }
 
+function writeDataToJson(hospitals, bounds, dimensions){
+    fetch('http://192.168.2.135:5000/save-hospitals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospitals: hospitals
+        })
+    }).catch(err => console.error('❌ Failed to save hospitals:', err));;
+
+
+    return fetch('http://192.168.2.135:5000/save-grid-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bounds, dimensions })
+    }).then(res => res.json());
+}
 
 /**
  * Retrieves the user's geolocation and fetches surrounding data.
@@ -462,55 +490,112 @@ async function fetchAndProcessUserSurroundings(){
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
 
+
+            // In rome
+            // const latitude = -15.72;
+            // const longitude = 45.09;
+
             document.getElementById('location').textContent = `Location: 
                 Latitude: ${latitude}, Longitude: ${longitude}`;
 
-            const nearbyFires = generateNearbyFires(latitude, longitude);
+            try{
+                const nearbyFires = generateNearbyFires(latitude, longitude);
 
-            // Fetch the nearby hospitals (Performance is kinda ehh)
-            // Doesn't fetch all the hospitals -- fix this
-            // Cache this on load up or maybe make it global
-            const hospitals = await fetchNearbyHospitals(latitude, longitude);
-            console.log('HOSPITALS',hospitals);
+                // Fetch the nearby hospitals (Performance is kinda ehh)
+                // Doesn't fetch all the hospitals -- fix this
+                // Cache this on load up or maybe make it global
+                const hospitals = await fetchNearbyHospitals(latitude, longitude);
+                if(hospitals.length == 0){
+                    // -- Make this a paragraph
+                    console.log('There are no hospitals within your location');
+                }
 
-            // Sends the hospitals over the backend
-            // Write it over to a json
-            
-            // --- Make it that it doesn't reload everytime page reloads
-            fetch('http://192.168.2.135:5000/save-hospitals', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  hospitals: hospitals
-                })
-            });
+                console.log('HOSPITALS',hospitals);
+    
+                // Sends the hospitals over the backend
+                // Write it over to a json
+                // --- Add validation this needs to work ---
+                
+                // --- Make it that it doesn't reload everytime page reloads
+                
 
-            console.log('Files saved to json')
+                // -- Random bounds
+                // const bounds = {
+                //     min_lat: -61.83,
+                //     max_lat: 61.17,
+                //     min_lon: -126.32,
+                //     max_lon: 170.41
+                // };
+                
+                // const dimensions = {
+                //     width: 580,
+                //     height: 270
+                // };
 
-            // Uoad the map with the markers
-            initializeMapWithData(latitude, longitude, nearbyFires, hospitals);
+                // -- Rome bounds
+                // const bounds = {
+                //     min_lat: 41.8,
+                //     max_lat: 42.1,
+                //     min_lon: 12.4,
+                //     max_lon: 12.6
+                // };
 
-            // Fetch earthquake data
-            // fetchEarthquakeData(latitude, longitude);
+                // const dimensions = {
+                //     width: 500,
+                //     height: 500
+                // };
 
+                // -- Montreal bounds
+                const bounds = {
+                    'min_lat': 45.4,
+                    'max_lat': 45.7, 
+                    'min_lon': -73.7, 
+                    'max_lon': -73.4
+                }
 
+                const dimensions = {
+                    'width': 500,
+                    'height': 500  
+                }
+             
+    
+                const gridData = await writeDataToJson(hospitals, bounds, dimensions);
+    
+                console.log('Files saved to json')
+                console.log('✅ Hospitals saved');
+                console.log('📦 Grid bounds:', gridData.bounds);
+                console.log('📏 Grid dimensions:', gridData.dimensions);
+    
+                // Uoad the map with the markers
+                initializeMapWithData(latitude, longitude, nearbyFires, hospitals, gridData);
+    
+                // Fetch earthquake data
+                // fetchEarthquakeData(latitude, longitude);
+    
+    
+    
+                // Now its going to use the location to find if there's a crucial disaster nearby
+                // If there's nothing then rip u die
+                // If the disaster is bigger then the "drones" will prioritze you
+                // The ai will categorize the severity of the disaster
+    
+                // sendLocationToServer(latitude, longitude);
 
-            // Now its going to use the location to find if there's a crucial disaster nearby
-            // If there's nothing then rip u die
-            // If the disaster is bigger then the "drones" will prioritze you
-            // The ai will categorize the severity of the disaster
+            } catch (error){
+                console.error('❌ Error during processing:', error);
+                document.getElementById('location').textContent = '⚠️ An error occurred while processing your data.';
+            }
 
-            // sendLocationToServer(latitude, longitude);
         }, (error)=> {
+            console.log('📍 Geolocation error:', error);
 
             document.getElementById('location').textContent = `You might be offline, 
                 please turn on the internet!`
-            console.log(error);
         })
          
     } else{
-        // Add proper error handling
-        console.log('Locationdead')
+        console.error('❌ Geolocation is not supported by this browser.');
+        document.getElementById('location').textContent = `⚠️ Geolocation is not supported in your browser.`;
     }
 }
 
@@ -615,6 +700,11 @@ function setup(){
 
     // Display the original map
     // -- Add a random spawn everytime
+
+    // Disable the help button until all the information is retrieved
+    // -- Maybe it should always be enabled
+    // const button = document.getElementById('assistance');
+    // button.disabled = true;
 
     // Get person's location
     fetchAndProcessUserSurroundings();

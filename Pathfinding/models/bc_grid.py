@@ -22,6 +22,7 @@ class BCGrid:
         
         # Initialize the grid after loading all data
         self._initialize_grid()
+
         return True
 
 
@@ -42,8 +43,11 @@ class BCGrid:
         # print('HOSPI',self.hospitals)
         
         # 0=empty, 1=obstacle, 2=hospital, 3=fire
+        print(self.hospitals)
         for x, y in self.hospitals:
             self.grid[y, x] = 2
+        print('22331922')
+        
             
         for x, y in self.obstacles:
             if 0 <= x < self.width and 0 <= y < self.height:
@@ -72,10 +76,14 @@ class BCGrid:
         self.height = config["dimensions"]["height"]
         self.bounds = config["bounds"]
     
+
+    def _validate_coordinates(self, x, y):
+        """Validate if the given (x, y) coordinates are within grid bounds"""
+        return 0 <= x < self.width and 0 <= y < self.height
+
     def load_hospitals(self, hospitals):
         """Load hospitals from the passed list"""
         # self.hospitals = [tuple(h) for h in hospitals]
-        print(hospitals)
         self.hospitals = []
         for hosp in hospitals:
             name = hosp['name']
@@ -83,8 +91,10 @@ class BCGrid:
             lon = hosp['lon']
             
             x, y = self.geo_to_grid(float(lat), float(lon))
-
-            self.hospitals.append((x, y))
+            if self._validate_coordinates(x, y):
+                self.hospitals.append((x, y))
+            else:
+                print(f"Skipping hospital {name} at ({lat}, {lon}) - out of bounds")
 
 
         

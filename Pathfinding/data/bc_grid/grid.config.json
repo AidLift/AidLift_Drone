@@ -1,12 +1,12 @@
 {
-  "bounds": {
-    "min_lat": 45.3,
-    "max_lat": 45.7,
-    "min_lon": -73.9,
-    "max_lon": -73.4
-  },
-  "dimensions": {
-    "width": 500,
-    "height": 500
-  }
+    "bounds": {
+        "min_lat": 45.4,
+        "max_lat": 45.7,
+        "min_lon": -73.7,
+        "max_lon": -73.4
+    },
+    "dimensions": {
+        "width": 500,
+        "height": 500
+    }
 }

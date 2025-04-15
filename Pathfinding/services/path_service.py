@@ -15,6 +15,8 @@ class PathService:
         if not self.grid.load():
             return {"error": "Grid is not properly loaded, data is missing."}
 
+        print('PYTHON HERE')
+
         x, y = self._latlon_to_grid(lat, lon)
    
         if not self._validate_coordinates(x, y):
@@ -55,9 +57,6 @@ class PathService:
                 0 <= y < self.grid.height)
     
     def _get_hospital_index(self, hospital):
-        print('IN HOSP INDEX')
-        print(self.grid.hospitals)
-        print(hospital)
         """
         Given a hospital coordinate (x, y), find its index in self.grid.hospitals
         """
