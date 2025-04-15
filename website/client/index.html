@@ -28,39 +28,62 @@
         <header>
             <h1>Aidlift Service</h1>
         </header>
-        <main>
-            <h2>Welcome!</h2>
-            <p>If you need further assistant please click on the button
-                    below..</p>
-            <button id="assistance">Click for assistance</button>
-
-            <p id="location">Location will be displayed here...</p>
-
-
-            <h1>Simulating Drone Arrival</h1>
-
-            <div id="map"></div>
-
-            <div id="map-container">
-                <div id="drone"></div>
-            </div>
-
-            <div id="ai-support">
-                <h2>AI CHAT SUPPORT</h2>
-                <div id="conversation">
-                    <p id="response">Hello, how may I assist you?</p>
+        <div class="container">
+            <div class="main-container">
+                <main>
+                    <h2>Welcome!</h2>
+                    <p>If you need further assistance please click on the button
+                            below..</p>
+                    <button id="assistance">Click for assistance</button>
+        
+                    <p id="location">Location will be displayed here...</p>
+        
+        
+                    <h1 class="centered-heading">Simulating Drone Arrival</h1>
+        
+                    <div id="map"></div>
                     
-                </div>
-
-                <input type="text" id="aiInput" placeholder="Ask something..." />
-                <!-- <button id="ai">AI Test</button> -->
+                    <div id="map-container">
+                        <div id="drone"></div>
+                    </div>
+                </main>
             </div>
-       
-        </main>
-        <footer>
-            <p>© 2025 AidLift</p>
-        </footer>
 
-
+            <div class="ai-container">
+                <div id="ai-support">
+                    <h2>AI CHAT SUPPORT</h2>
+                    <div id="conversation">
+                        <p id="response">Hello, how may I assist you?</p>
+                        
+                    </div>
+        
+                    <input type="text" id="aiInput" placeholder="Ask something..." />
+                    <!-- <button id="ai">AI Test</button> -->
+                     
+                </div>
+            </div>
+    
+          
+            <div class="loading-container">
+                <img src="/images/drone.gif" alt="Loading... PLEASE WAIT HOLY SHIT" class="loading-gif" />
+                <p>HEY</p>
+            </div>
+    
+            <footer>
+                <p>© 2025 AidLift</p>
+            </footer>
+        </div>
+        
     </body>
+
+    <form onSubmit={handleUpload} encType="multipart/form-data">
+        <input 
+          type="file" 
+          accept="video/*" 
+          onChange={handleFileChange}
+          required
+        />
+        <button type="submit">Upload Video</button>
+      </form>
+      
 </html>

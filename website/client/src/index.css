@@ -1,4 +1,74 @@
 #map {
     height: 700px;
     width:  700px;
+
+    border: solid rgb(248, 200, 208) 10px
+    
 }
+body {
+    background-color: #121212; /* dark mode example */
+    color: #e0e0e0; /* text color */
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 16px;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00bcd4;
+  }
+  
+  button {
+    background-color: #000000;
+    color: rgb(235, 235, 235);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #0097a7;
+  }
+  
+  /* .main-container {
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  } */
+
+  .ai-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .centered-heading {
+    text-align: center;
+  }
+  
+  .loading-gif {
+    width: 150px;
+    height: auto;
+    margin-bottom: 20px;
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    /* justify-content: center; */
+    align-items: center;
+    background-color: #1e1e1e;
+  }
+
+  .box {
+    padding:20px;
+    margin: 10px;
+    background-color: #00bcd4;
+    color: white;
+    border-radius: 8px;
+  }
