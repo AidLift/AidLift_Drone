@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', setup)
 // -- Make assistance button non clickable when loading
 // - Also add loading screen
 
+
 // Write these coords and send them (or read them) 
 // - Make the app more compatible around the world
 const myObj ={
@@ -35,8 +36,19 @@ function gridToLatLon(coords) {
 }
 
 
-// Change name maybe to detect fire and get hos path
-async function getBestHospitalPath(latitude, longitude){
+/**
+ * Detects a fire at the specified location and retrieves the fastest path to the nearest hospital.
+ * 
+ * This function sends the user's current location (latitude and longitude) to a backend service
+ * that detects nearby fires. It then returns the best path to the nearest hospital based on the fire's
+ * location and the user's current position.
+ *
+ * @async
+ * @param {number} latitude - The latitude of the current location.
+ * @param {number} longitude - The longitude of the current location.
+ * @returns {Promise<Object|null>} A promise that resolves to the response data containing the path to the nearest hospital or `null` if an error occurred.
+ */
+async function detectFireAndGetHospitalPath(latitude, longitude){
     try {
         const res = await fetch('http://192.168.2.135:5000/detect-fire', {
         // const res = await fetch('http://10.230.123.44:5000/detect-fire', {
@@ -64,19 +76,85 @@ async function getBestHospitalPath(latitude, longitude){
 }
 
 /**
- * Creation of the drone marker
- * - Moves the drone to the target (My location)
- * 
- * Maybe change the name to get assistance and moveDroneToTarget
- * to the functions below
+ * Fetches the nearest hospital path based on the current location of the fire
+ * and displays the fire marker on the map, as well as the path to the hospital.
+ *
+ * This function detects the fire using the `detectFireAndGetHospitalPath` method,
+ * then draws a path to the nearest hospital and places a marker at the fire's location.
+ * It also appends a message to the page to inform the user of the nearest hospital.
+ *
+ * @async
+ * @function displayFireAndHospitalPath
+ * @param {number} latitude - The latitude of the current fire location.
+ * @param {number} longitude - The longitude of the current fire location.
  */
-async function moveDroneToTarget(map, latitude, longitude, nearbyFires, hospitals, range = 70000){
+async function displayFireAndHospitalPath(map, latitude, longitude, hospitals){
+    const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude);
+
+    const pathLatLon = hospitalPath.path.map(([x, y]) =>
+        L.latLng(...gridToLatLon([x, y]))
+    );
+
+    L.polyline(pathLatLon, { color: 'red' }).addTo(map);
+
+
+    // Display the fire on the map
+    const fireDefaultIcon = L.icon({
+        iconUrl: '/images/fire.jpg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+
+    const fireMarker = L.marker([latitude, longitude], {
+        icon: fireDefaultIcon
+    }).addTo(map);
+
+
+    // Check if the fire path message exists, delete it if yes
+    const firePathMessage = document.querySelector('#fire-path-message');
+    if (firePathMessage) {
+        firePathMessage.remove();
+    }
+
+    // Create the fire path message
+    const main = document.querySelector('main');
+    const p = document.createElement('p');
+    p.id = 'fire-path-message';
+    p.textContent = `Please follow the path to the 
+        ${hospitals[hospitalPath.hospital_index].name}`;
+    main.appendChild(p);
+}
+
+
+/**
+ * Deploys an assistance drone to the user's location and generates a path to the nearest hospital.
+ * 
+ * This function:
+ * - Fetches the optimal path from the user's location to the nearest hospital.
+ * - Animates a drone marker moving toward the user's location.
+ * - Displays the fire location and route to the selected hospital on the map.
+ * - Appends a message with hospital details to the main interface.
+ * 
+ * @async
+ * @param {L.Map} map - The Leaflet map instance to display markers and paths on.
+ * @param {number} latitude - The latitude of the user's (or fire) location.
+ * @param {number} longitude - The longitude of the user's (or fire) location.
+ * @param {Array<Object>} nearbyFires - An array of nearby fire objects with latitude and longitude.
+ * @param {Array<Object>} hospitals - An array of hospital objects with `lat`, `lon`, and `name` properties.
+ * @param {number} [range=70000] - Optional. The maximum distance (in meters) to consider when searching for the nearest fire (currently unused).
+ */
+async function requestAssistance(map, latitude, longitude, nearbyFires, hospitals, range = 70000){
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
     let closestDistance = Infinity
     let closestFire = null
     console.log('LONG',)
+    // Organzie this function and add validation in the case that
+        // they are to prank us.
+
+
     // Finds the closest fires with the range
     // for(const fire of nearbyFires){
     //     const fireDistance = calculateDistance(latitude, longitude,
@@ -106,54 +184,13 @@ async function moveDroneToTarget(map, latitude, longitude, nearbyFires, hospital
 
 
     // const hospitalPath = await getBestHospitalPath(latitude+0.002, longitude+0.02);
-    const hospitalPath = await getBestHospitalPath(latitude, longitude);
 
-    console.log('HOSPITALPATH',hospitalPath);
 
-    console.log('CONVERTING',);
-    const defaultIcon = L.icon({
-        iconUrl: '/images/drone.png',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32]
-    });
+    // If there is confirmation of a fire then the steps below will occur
+    // ===========If Fire is Confirmed==============
     
-    // console.log(hospitals[(hospitalPath.hospital_index-1)])
-    console.log(hospitals[hospitalPath.hospital_index])
-
-
-    const pathLatLon = hospitalPath.path.map(([x, y]) =>
-        L.latLng(...gridToLatLon([x, y]))
-    );
-
-    L.polyline(pathLatLon, { color: 'red' }).addTo(map);
-
-
-
-    // Display the fire on the map
-    const fireDefaultIcon = L.icon({
-        iconUrl: '/images/fire.jpg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32]
-    });
-
-    const fireMarker = L.marker([latitude, longitude], {
-        icon: fireDefaultIcon
-    }).addTo(map);
-
-    // const marker = L.marker([latitude+0.002, longitude+0.02], {
-    //     icon: defaultIcon
-    //   }).addTo(map);
-
-    // Create the message
-    const main = document.querySelector('main');
-    const p = document.createElement('p');
-    p.textContent = `Please follow the path to the 
-        ${hospitals[hospitalPath.hospital_index].name}`;
-    main.appendChild(p);
-
-    // ***** Drone stuff
+    await displayFireAndHospitalPath(map, latitude, longitude, hospitals);
+    // ***** Drone stuff -- try to send just one drone
             
     const droneHelperIcon = L.icon({
         iconUrl: '/images/drone.png',
@@ -239,17 +276,37 @@ async function moveDroneToTarget(map, latitude, longitude, nearbyFires, hospital
 }
 
 
-
 /**
- * Updates the map with person's location, nearby hospitals, nearby fires
- * @param {*} latitude 
- * @param {*} longitude 
+ * Initializes and displays the map using the user's location and nearby data.
+ * 
+ * - Removes the loading screen
+ * - Centers the map on the user's coordinates
+ * - Adds a marker for the user's location
+ * - Displays markers for nearby hospitals
+ * 
+ * @param {number} latitude - The user's latitude
+ * @param {number} longitude - The user's longitude
+ * @param {Array<Object>} nearbyFires - Array of nearby fire data (currently unused)
+ * @param {Array<Object>} hospitals - Array of nearby hospital data with lat/lon fields
  */
-function loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals){
+function initializeMapWithData(latitude, longitude, nearbyFires, hospitals){
    if(latitude != null &&
        longitude != null){
 
-        // Set new map view
+        // Create the map
+        const map = L.map('map').setView([0, 0], 13);
+
+        // Remove loading screen
+        const loading = document.querySelector('.loading-container');
+        if (loading && loading.parentNode) {
+          loading.parentNode.removeChild(loading);
+        }
+
+        // Define and set new map view
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
         map.setView([latitude, longitude], 13);
 
         // Define the person's marker
@@ -309,9 +366,8 @@ function loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospital
             }).addTo(map);
         }
         
-
         // Drone is created and moved to the lat and long given
-        document.getElementById('assistance').addEventListener('click', () => moveDroneToTarget(map, latitude, longitude, nearbyFires, hospitals));
+        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, nearbyFires, hospitals));
 
     }
 }
@@ -384,10 +440,21 @@ function generateNearbyFires(lat, lon, count = 10) {
 
 
 /**
- * Retrive the all the surroundings, location, fires, hospitals
- * @param {*} map 
+ * Retrieves the user's geolocation and fetches surrounding data.
+ *
+ * - Gets current latitude and longitude using the browser's Geolocation API.
+ * - Finds nearby fire locations (simulated).
+ * - Fetches nearby hospitals via an external API or service.
+ * - Sends hospital data to the backend server to be saved in JSON format.
+ * - Loads a map centered on the user's location with fire and hospital markers.
+ *
+ * Displays location info to the user and logs any relevant debugging info.
+ *
+ * @async
+ * @function fetchAndProcessUserSurroundings
+ * @returns {Promise<void>} Resolves when all data is fetched and processed.
  */
-async function retrieveSurroundings(map){
+async function fetchAndProcessUserSurroundings(){
     if (navigator.geolocation){
 
         navigator.geolocation.getCurrentPosition(async (position) => {
@@ -421,7 +488,7 @@ async function retrieveSurroundings(map){
             console.log('Files saved to json')
 
             // Uoad the map with the markers
-            loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospitals);
+            initializeMapWithData(latitude, longitude, nearbyFires, hospitals);
 
             // Fetch earthquake data
             // fetchEarthquakeData(latitude, longitude);
@@ -549,16 +616,8 @@ function setup(){
     // Display the original map
     // -- Add a random spawn everytime
 
-    // const map = L.map('map').setView([51.505, -0.09], 13);
-    const map = L.map('map').setView([0, 0], 13);
-
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
     // Get person's location
-    retrieveSurroundings(map);
+    fetchAndProcessUserSurroundings();
 
     // When the button is clicked
     // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
