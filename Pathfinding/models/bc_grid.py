@@ -39,7 +39,7 @@ class BCGrid:
     def _initialize_grid(self):
         """Create grid with hospitals and obstacles"""
         self.grid = np.zeros((self.height, self.width), dtype=np.uint8)
-        print('HOSPI',self.hospitals)
+        # print('HOSPI',self.hospitals)
         
         # 0=empty, 1=obstacle, 2=hospital, 3=fire
         for x, y in self.hospitals:
@@ -75,17 +75,17 @@ class BCGrid:
     def load_hospitals(self, hospitals):
         """Load hospitals from the passed list"""
         # self.hospitals = [tuple(h) for h in hospitals]
-        print('Loading hosps')
+        print(hospitals)
         self.hospitals = []
-        for hosp in hospitals[1:]: 
+        for hosp in hospitals:
             name = hosp['name']
             lat = hosp['lat']
             lon = hosp['lon']
             
             x, y = self.geo_to_grid(float(lat), float(lon))
-            print('AFTER GEO')
 
             self.hospitals.append((x, y))
+
 
         
     
@@ -124,7 +124,6 @@ class BCGrid:
     def geo_to_grid(self, lat, lon):
         """Convert geographic coordinates to grid coordinates"""
 
-        print('Inside geo')
         min_lat = self.bounds['min_lat']
         max_lat = self.bounds['max_lat']
         min_lon = self.bounds['min_lon']

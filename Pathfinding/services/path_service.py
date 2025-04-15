@@ -29,11 +29,16 @@ class PathService:
         
         path = AStar.find_path(self.grid, (x, y), hospital)
         
+        hospital_index = self._get_hospital_index(hospital)
+        if hospital_index == -1:
+            return {"error": "Hospital index not found"}
+        
         return {
             "fire": [x, y],
             "hospital": list(hospital),
             "path": path,
-            "grid_state": self.grid.grid.tolist()
+            "grid_state": self.grid.grid.tolist(),
+            "hospital_index": hospital_index
         }
     
     def _latlon_to_grid(self, lat, lon):
@@ -48,3 +53,20 @@ class PathService:
     def _validate_coordinates(self, x, y):
         return (0 <= x < self.grid.width and 
                 0 <= y < self.grid.height)
+    
+    def _get_hospital_index(self, hospital):
+        print('IN HOSP INDEX')
+        print(self.grid.hospitals)
+        print(hospital)
+        """
+        Given a hospital coordinate (x, y), find its index in self.grid.hospitals
+        """
+        # for idx, coords in enumerate(self.grid.hospitals):
+        #     if coords == tuple(hospital):
+        #         return idx
+        # return -1
+    
+        for idx, coords in enumerate(self.grid.hospitals):
+            if all(abs(a - b) < 1e-6 for a, b in zip(coords, hospital)):
+                return idx
+        return -1

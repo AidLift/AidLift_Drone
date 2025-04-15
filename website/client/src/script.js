@@ -9,12 +9,37 @@ document.addEventListener('DOMContentLoaded', setup)
 // -- Make assistance button non clickable when loading
 // - Also add loading screen
 
+// Write these coords and send them (or read them) 
+// - Make the app more compatible around the world
+const myObj ={
+    "bounds": {
+      "min_lat": 45.3,
+      "max_lat": 45.7,
+      "min_lon": -73.9,
+      "max_lon": -73.4
+    },
+    "dimensions": {
+      "width": 500,
+      "height": 500
+    }
+  }
 
-// Change name maybe
+function gridToLatLon(coords) {
+    const { min_lat, max_lat, min_lon, max_lon } = myObj.bounds;
+    const { width, height } = myObj.dimensions;
+  
+    const lat = max_lat - (coords[1] / height) * (max_lat - min_lat);
+    const lon = min_lon + (coords[0] / width) * (max_lon - min_lon);
+  
+    return [lat, lon];
+}
+
+
+// Change name maybe to detect fire and get hos path
 async function getBestHospitalPath(latitude, longitude){
     try {
-        // const res = await fetch('http://192.168.2.135:5000/detect-fire', {
-        const res = await fetch('http://10.230.123.44:5000/detect-fire', {
+        const res = await fetch('http://192.168.2.135:5000/detect-fire', {
+        // const res = await fetch('http://10.230.123.44:5000/detect-fire', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -45,44 +70,90 @@ async function getBestHospitalPath(latitude, longitude){
  * Maybe change the name to get assistance and moveDroneToTarget
  * to the functions below
  */
-async function moveDroneToTarget(map, latitude, longitude, nearbyFires, range = 70000){
+async function moveDroneToTarget(map, latitude, longitude, nearbyFires, hospitals, range = 70000){
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
     let closestDistance = Infinity
     let closestFire = null
-    
+    console.log('LONG',)
     // Finds the closest fires with the range
-    for(const fire of nearbyFires){
-        const fireDistance = calculateDistance(latitude, longitude,
-            fire.latitude, fire.longitude);
+    // for(const fire of nearbyFires){
+    //     const fireDistance = calculateDistance(latitude, longitude,
+    //         fire.latitude, fire.longitude);
 
-        if (fireDistance <= range && fireDistance < closestDistance) {
-            closestDistance = fireDistance;
-            closestFire = fire;
-        }
-    }
+    //     if (fireDistance <= range && fireDistance < closestDistance) {
+    //         closestDistance = fireDistance;
+    //         closestFire = fire;
+    //     }
+    // }
 
 
-    if (!closestFire) {
-        console.log("❌ No fires are within range. Drone will not be deployed.");
-        return;
-    }
+    // if (!closestFire) {
+    //     console.log("❌ No fires are within range. Drone will not be deployed.");
+    //     return;
+    // }
 
-    console.log(`🔥 Fire is within ${range}m. Deploying drone...`);
-    console.log('Closest fire is ',closestFire)
+    // console.log(`🔥 Fire is within ${range}m. Deploying drone...`);
+    // console.log('Closest fire is ',closestFire)
 
     // Generate the best path for hospital//
 
-    if(closestFire.latitude && closestFire.longitude){
-        console.log('lat',closestFire.latitude)
-        console.log('long',closestFire.longitude)
+    // if(closestFire.latitude && closestFire.longitude){
+    //     console.log('lat',closestFire.latitude)
+    //     console.log('long',closestFire.longitude)
+    // }
 
-        const hospitalPath = await getBestHospitalPath(closestFire.latitude, closestFire.longitude);
-        console.log('HOSPITALPATH',hospitalPath);
-    }
 
-    // *****
+    // const hospitalPath = await getBestHospitalPath(latitude+0.002, longitude+0.02);
+    const hospitalPath = await getBestHospitalPath(latitude, longitude);
+
+    console.log('HOSPITALPATH',hospitalPath);
+
+    console.log('CONVERTING',);
+    const defaultIcon = L.icon({
+        iconUrl: '/images/drone.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+    
+    // console.log(hospitals[(hospitalPath.hospital_index-1)])
+    console.log(hospitals[hospitalPath.hospital_index])
+
+
+    const pathLatLon = hospitalPath.path.map(([x, y]) =>
+        L.latLng(...gridToLatLon([x, y]))
+    );
+
+    L.polyline(pathLatLon, { color: 'red' }).addTo(map);
+
+
+
+    // Display the fire on the map
+    const fireDefaultIcon = L.icon({
+        iconUrl: '/images/fire.jpg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+
+    const fireMarker = L.marker([latitude, longitude], {
+        icon: fireDefaultIcon
+    }).addTo(map);
+
+    // const marker = L.marker([latitude+0.002, longitude+0.02], {
+    //     icon: defaultIcon
+    //   }).addTo(map);
+
+    // Create the message
+    const main = document.querySelector('main');
+    const p = document.createElement('p');
+    p.textContent = `Please follow the path to the 
+        ${hospitals[hospitalPath.hospital_index].name}`;
+    main.appendChild(p);
+
+    // ***** Drone stuff
             
     const droneHelperIcon = L.icon({
         iconUrl: '/images/drone.png',
@@ -196,34 +267,34 @@ function loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospital
 
 
         // Define the fire markers
-        const fireDefaultIcon = L.icon({
-            iconUrl: '/images/fire.jpg',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
-        const fireIntenseIcon = L.icon({
-            iconUrl: '/images/fireIntense.jpg',
-            iconSize: [60, 60],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
+        // const fireDefaultIcon = L.icon({
+        //     iconUrl: '/images/fire.jpg',
+        //     iconSize: [32, 32],
+        //     iconAnchor: [16, 32],
+        //     popupAnchor: [0, -32]
+        // });
+        // const fireIntenseIcon = L.icon({
+        //     iconUrl: '/images/fireIntense.jpg',
+        //     iconSize: [60, 60],
+        //     iconAnchor: [16, 32],
+        //     popupAnchor: [0, -32]
+        // });
 
 
-        for (const fire of nearbyFires){
-            let fireIcon = fireDefaultIcon
+        // for (const fire of nearbyFires){
+        //     let fireIcon = fireDefaultIcon
 
-            console.log(fire.intensity);
+        //     console.log(fire.intensity);
 
-            if(fire.intensity > 4){
-                fireIcon = fireIntenseIcon
-            }
+        //     if(fire.intensity > 4){
+        //         fireIcon = fireIntenseIcon
+        //     }
 
-            const fireMarker = L.marker([fire.latitude, fire.longitude], {
-                icon: fireIcon
-            }).addTo(map);
+        //     const fireMarker = L.marker([fire.latitude, fire.longitude], {
+        //         icon: fireIcon
+        //     }).addTo(map);
 
-        }
+        // }
 
         // Define the hospital markers
         const hospitalIcon = L.icon({
@@ -240,7 +311,7 @@ function loadMapWithSurroundings(map, latitude, longitude, nearbyFires, hospital
         
 
         // Drone is created and moved to the lat and long given
-        document.getElementById('assistance').addEventListener('click', () => moveDroneToTarget(map, latitude, longitude, nearbyFires));
+        document.getElementById('assistance').addEventListener('click', () => moveDroneToTarget(map, latitude, longitude, nearbyFires, hospitals));
 
     }
 }
