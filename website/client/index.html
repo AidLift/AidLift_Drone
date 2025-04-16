@@ -40,7 +40,6 @@
 
                     <p id="location">Location will be displayed here...</p>
         
-        
                     <h1 class="centered-heading">Simulating Drone Arrival</h1>
         
                     <div id="map">
@@ -77,14 +76,23 @@
         
     </body>
 
-    <form onSubmit={handleUpload} encType="multipart/form-data">
-        <input 
-          type="file" 
-          accept="video/*" 
-          onChange={handleFileChange}
-          required
-        />
-        <button type="submit">Upload Video</button>
-      </form>
+    <div id="images">
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input 
+              type="file" 
+              id="mediaInput" 
+              accept="image/*,video/*" 
+              required
+            />
+            <button type="submit">Upload Media</button>
+        </form>
+    
+    
+        <video id="videoElement" width="640" height="480" autoplay></video>
+        <button id="startCameraButton" disabled>Start Camera</button>
+        <button id="stopCameraButton" disabled>Stop Camera</button>
+
+    </div>
+
       
 </html>

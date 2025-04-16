@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,6 +56,43 @@ app.post('/chat', async (req, res) => {
 
 app.get('/test', (req, res) => {
     res.json({ message: 'Connection successful!' });
+});
+
+
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+app.post('/upload-media', (req, res) => {
+  console.log('IN')
+  const boundary = req.headers['content-type'].split('boundary=')[1];
+
+  let rawData = Buffer.alloc(0);
+
+  req.on('data', chunk => {
+    rawData = Buffer.concat([rawData, chunk]);
+  });
+
+  req.on('end', () => {
+    const parts = rawData.toString().split(`--${boundary}`);
+    const filePart = parts.find(part => part.includes('filename='));
+
+    if (!filePart) {
+      return res.status(400).send('No file found in the request.');
+    }
+
+    // Extract filename and file content
+    const matchFilename = filePart.match(/filename="(.+?)"/);
+    const filename = matchFilename ? matchFilename[1] : `file-${Date.now()}`;
+    const startOfContent = filePart.indexOf('\r\n\r\n') + 4;
+    const fileContent = filePart.slice(startOfContent, filePart.lastIndexOf('\r\n'));
+
+    const filePath = path.join(__dirname, 'uploads', filename);
+    fs.writeFileSync(filePath, fileContent, 'binary');
+
+    res.send('File uploaded successfully (no multer)! 🧠🔥');
+  });
 });
 
 

@@ -6,24 +6,13 @@ document.addEventListener('DOMContentLoaded', setup)
 ///****** Fix the comments, kinda bad rn */
 // Organize the code
 // Also fix location might be a bit wacky (might be vpn though)
-// -- Make assistance button non clickable when loading
-// - Also add loading screen
 
 
 // Write these coords and send them (or read them) 
 // - Make the app more compatible around the world
-// const myObj ={
-//     "bounds": {
-//       "min_lat": 45.3,
-//       "max_lat": 45.7,
-//       "min_lon": -73.9,
-//       "max_lon": -73.4
-//     },
-//     "dimensions": {
-//       "width": 500,
-//       "height": 500
-//     }
-//   }
+
+
+// -- Implement caching, hospitals and all that (location is always changing so not that)
 
   
 
@@ -149,11 +138,10 @@ async function displayFireAndHospitalPath(map, latitude, longitude, hospitals, g
  * @param {L.Map} map - The Leaflet map instance to display markers and paths on.
  * @param {number} latitude - The latitude of the user's (or fire) location.
  * @param {number} longitude - The longitude of the user's (or fire) location.
- * @param {Array<Object>} nearbyFires - An array of nearby fire objects with latitude and longitude.
  * @param {Array<Object>} hospitals - An array of hospital objects with `lat`, `lon`, and `name` properties.
  * @param {number} [range=70000] - Optional. The maximum distance (in meters) to consider when searching for the nearest fire (currently unused).
  */
-async function requestAssistance(map, latitude, longitude, nearbyFires, hospitals, gridData, range = 70000){
+async function requestAssistance(map, latitude, longitude, hospitals, gridData, range = 70000){
     let droneLatitude = latitude-0.30;
     let droneLongitude = longitude-0.50;
 
@@ -162,38 +150,6 @@ async function requestAssistance(map, latitude, longitude, nearbyFires, hospital
     console.log('LONG',)
     // Organzie this function and add validation in the case that
         // they are to prank us.
-
-
-    // Finds the closest fires with the range
-    // for(const fire of nearbyFires){
-    //     const fireDistance = calculateDistance(latitude, longitude,
-    //         fire.latitude, fire.longitude);
-
-    //     if (fireDistance <= range && fireDistance < closestDistance) {
-    //         closestDistance = fireDistance;
-    //         closestFire = fire;
-    //     }
-    // }
-
-
-    // if (!closestFire) {
-    //     console.log("❌ No fires are within range. Drone will not be deployed.");
-    //     return;
-    // }
-
-    // console.log(`🔥 Fire is within ${range}m. Deploying drone...`);
-    // console.log('Closest fire is ',closestFire)
-
-    // Generate the best path for hospital//
-
-    // if(closestFire.latitude && closestFire.longitude){
-    //     console.log('lat',closestFire.latitude)
-    //     console.log('long',closestFire.longitude)
-    // }
-
-
-    // const hospitalPath = await getBestHospitalPath(latitude+0.002, longitude+0.02);
-
 
     // If there is confirmation of a fire then the steps below will occur
     // ===========If Fire is Confirmed==============
@@ -259,7 +215,6 @@ async function requestAssistance(map, latitude, longitude, nearbyFires, hospital
             droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, moveDistance);
             droneLongitude = moveTowardsTarget(droneLongitude, targetLongitude, moveDistance);
             droneHelper.setLatLng([droneLatitude, droneLongitude])
-            // droneCircle.setLatLng([droneLatitude, droneLongitude])
 
             previousTime = currentTime;
             requestAnimationFrame(moveDrone);
@@ -295,10 +250,9 @@ async function requestAssistance(map, latitude, longitude, nearbyFires, hospital
  * 
  * @param {number} latitude - The user's latitude
  * @param {number} longitude - The user's longitude
- * @param {Array<Object>} nearbyFires - Array of nearby fire data (currently unused)
  * @param {Array<Object>} hospitals - Array of nearby hospital data with lat/lon fields
  */
-function initializeMapWithData(latitude, longitude, nearbyFires, hospitals, gridData){
+function initializeMapWithData(latitude, longitude, hospitals, gridData){
    if(latitude != null &&
        longitude != null){
 
@@ -335,36 +289,6 @@ function initializeMapWithData(latitude, longitude, nearbyFires, hospitals, grid
         .openPopup();
 
 
-        // Define the fire markers
-        // const fireDefaultIcon = L.icon({
-        //     iconUrl: '/images/fire.jpg',
-        //     iconSize: [32, 32],
-        //     iconAnchor: [16, 32],
-        //     popupAnchor: [0, -32]
-        // });
-        // const fireIntenseIcon = L.icon({
-        //     iconUrl: '/images/fireIntense.jpg',
-        //     iconSize: [60, 60],
-        //     iconAnchor: [16, 32],
-        //     popupAnchor: [0, -32]
-        // });
-
-
-        // for (const fire of nearbyFires){
-        //     let fireIcon = fireDefaultIcon
-
-        //     console.log(fire.intensity);
-
-        //     if(fire.intensity > 4){
-        //         fireIcon = fireIntenseIcon
-        //     }
-
-        //     const fireMarker = L.marker([fire.latitude, fire.longitude], {
-        //         icon: fireIcon
-        //     }).addTo(map);
-
-        // }
-
         // Define the hospital markers
         const hospitalIcon = L.icon({
             iconUrl: '/images/hospital.png',
@@ -379,7 +303,7 @@ function initializeMapWithData(latitude, longitude, nearbyFires, hospitals, grid
         }
         
         // Drone is created and moved to the lat and long given
-        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, nearbyFires, hospitals, gridData));
+        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, hospitals, gridData));
 
     }
 }
@@ -430,41 +354,59 @@ async function fetchNearbyHospitals(latitude, longitude, radius = 10000) {
 }
 
 
+async function writeDataToJson(hospitals, bounds, dimensions) {
+    // Retrieve the stored data from localStorage
+    const previousHospitals = JSON.parse(localStorage.getItem('hospitals'));
+    const previousBounds = JSON.parse(localStorage.getItem('bounds'));
+    const previousDimensions = JSON.parse(localStorage.getItem('dimensions'));
 
-// Spawn in random fires
-function generateNearbyFires(lat, lon, count = 10) {
-    const fires = [];
+    // Check if the data has changed by comparing the objects directly
+    const hospitalsChanged = JSON.stringify(hospitals) !== JSON.stringify(previousHospitals);
+    const boundsChanged = JSON.stringify(bounds) !== JSON.stringify(previousBounds);
+    const dimensionsChanged = JSON.stringify(dimensions) !== JSON.stringify(previousDimensions);
+    
 
-    for (let i = 0; i < count; i++) {
-        const latOffset = (Math.random() - 0.5) * 0.02;
-        const lonOffset = (Math.random() - 0.5) * 0.02;
-
-        const intensity = Math.floor(Math.random() * 5) + 1
-        fires.push({
-            latitude: lat + latOffset,
-            longitude: lon + lonOffset,
-            intensity: intensity
-        });
+    // Handle hospital changes
+    if (hospitalsChanged) {
+        try {
+            await fetch('http://192.168.2.135:5000/save-hospitals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hospitals: hospitals
+                })
+            });
+        } catch (err) {
+            console.error('❌ Failed to save hospitals:', err);
+        }
     }
 
-    return fires;
-}
+    // Handle bounds and dimensions changes
+    if (boundsChanged || dimensionsChanged) {
+        try {
+            await fetch('http://192.168.2.135:5000/save-grid-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bounds, dimensions })
+            }).then(res => res.json());
+        } catch (err) {
+            console.error('❌ Failed to save grid info:', err);
+        }
+    }
 
-function writeDataToJson(hospitals, bounds, dimensions){
-    fetch('http://192.168.2.135:5000/save-hospitals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          hospitals: hospitals
-        })
-    }).catch(err => console.error('❌ Failed to save hospitals:', err));;
+    // Update localStorage if any data has changed
+    if (hospitalsChanged) {
+        localStorage.setItem('hospitals', JSON.stringify(hospitals));
+    }
+    if (boundsChanged) {
+        localStorage.setItem('bounds', JSON.stringify(bounds));
+    }
+    if (dimensionsChanged) {
+        localStorage.setItem('dimensions', JSON.stringify(dimensions));
+    }
 
-
-    return fetch('http://192.168.2.135:5000/save-grid-info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bounds, dimensions })
-    }).then(res => res.json());
+    // Return success after all operations are completed
+    return { success: true };
 }
 
 /**
@@ -499,7 +441,7 @@ async function fetchAndProcessUserSurroundings(){
                 Latitude: ${latitude}, Longitude: ${longitude}`;
 
             try{
-                const nearbyFires = generateNearbyFires(latitude, longitude);
+                
 
                 // Fetch the nearby hospitals (Performance is kinda ehh)
                 // Doesn't fetch all the hospitals -- fix this
@@ -546,20 +488,23 @@ async function fetchAndProcessUserSurroundings(){
                 // };
 
                 // -- Montreal bounds
-                const bounds = {
-                    'min_lat': 45.4,
-                    'max_lat': 45.7, 
-                    'min_lon': -73.7, 
-                    'max_lon': -73.4
-                }
+                const gridData = {
+                    "bounds": {
+                        "min_lat": 45.4,
+                        "max_lat": 45.7,
+                        "min_lon": -73.7,
+                        "max_lon": -73.4
+                    },
+                    "dimensions": {
+                        "width": 500,
+                        "height": 500
+                    }
 
-                const dimensions = {
-                    'width': 500,
-                    'height': 500  
                 }
-             
     
-                const gridData = await writeDataToJson(hospitals, bounds, dimensions);
+                // const gridData = await writeDataToJson(hospitals, bounds, dimensions);
+
+                await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
     
                 console.log('Files saved to json')
                 console.log('✅ Hospitals saved');
@@ -567,19 +512,7 @@ async function fetchAndProcessUserSurroundings(){
                 console.log('📏 Grid dimensions:', gridData.dimensions);
     
                 // Uoad the map with the markers
-                initializeMapWithData(latitude, longitude, nearbyFires, hospitals, gridData);
-    
-                // Fetch earthquake data
-                // fetchEarthquakeData(latitude, longitude);
-    
-    
-    
-                // Now its going to use the location to find if there's a crucial disaster nearby
-                // If there's nothing then rip u die
-                // If the disaster is bigger then the "drones" will prioritze you
-                // The ai will categorize the severity of the disaster
-    
-                // sendLocationToServer(latitude, longitude);
+                initializeMapWithData(latitude, longitude, hospitals, gridData);
 
             } catch (error){
                 console.error('❌ Error during processing:', error);
@@ -656,39 +589,14 @@ const handleAIButton =  async (e) => {
 }
 
 
-/**
- * Returns the help in response to the magnitude
- * @param {*} magnitude 
- * @returns 
- */
-function getEarthquakeResponse(magnitude){
-    switch(true){
-        case(magnitude < 3):
-            return "No actions needed";
-        case(magnitude >=3 && magnitude < 4):
-            return "Stay calm, take note of it, and check for updates.";
-        case(magnitude >= 4 && magnitude < 5):
-            return `Stay inside and be alert for aftershocks.
-                No major action is required unless you’re in a structurally weak building.`
-        case(magnitude >= 5 && magnitude < 6):
-            return `•    Indoors: Drop, Cover, and Hold On. Stay away from windows and heavy furniture.
-    •    Outdoors: Move away from buildings, trees, and power lines.
-    •    Aftermath: Check for injuries and damages, and prepare for aftershocks.`
-        case(magnitude >= 6 && magnitude < 7):
-            return `   •    What to do:
-    •    During: Drop, Cover, and Hold On. Stay inside until shaking stops.
-    •    After: Evacuate if necessary, check for injuries, avoid damaged structures, and follow emergency broadcasts`
-        case(magnitude >= 7 && magnitude < 8):
-            return `    •    Protect yourself during shaking (Drop, Cover, Hold On).
-    •    After shaking stops, evacuate if the building is unsafe.
-    •    Be prepared for strong aftershocks.
-    •    Avoid damaged roads and bridges.`
-        case(magnitude >= 8 ):
-            return `•    Get to an open area away from buildings and power lines.
-    •    If near the coast, immediately move to higher ground in case of a tsunami.`
-        
-    }
-}
+
+// ------------- Regarding fire authentication
+// -- Geo Fencing, use the user's location to determine whether they're
+// -- .. near a high risk area for fires
+
+// Cross referencing: So if there's alot of ppl reporting a fire
+// Option to report a fire
+
 
 /**
  * Main setup (Comment in the future*)
@@ -705,9 +613,14 @@ function setup(){
     // -- Maybe it should always be enabled
     // const button = document.getElementById('assistance');
     // button.disabled = true;
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', (event) => getImageOrVideo(event));
+
+
+    accessCamera()
 
     // Get person's location
-    fetchAndProcessUserSurroundings();
+    // fetchAndProcessUserSurroundings();
 
     // When the button is clicked
     // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
@@ -718,54 +631,79 @@ function setup(){
 
 
 
+function getImageOrVideo(event){
+    event.preventDefault();
+    console.log('SENT')
+
+    const mediaInput = document.getElementById('mediaInput');
+    const file = mediaInput.files[0];
+
+    if (file) {
+        console.log("Selected file:", file);
+        console.log("File type:", file.type);
+  
+        const formData = new FormData();
+        formData.append("media", file);
+  
+        fetch('/api/upload-media', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.text())
+        .then(result => {
+          console.log("Upload success:", result);
+        })
+        .catch(error => {
+          console.error("Upload error:", error);
+        });
+      }
+}
 
 
 
+// Maybe use WebSockets or recording to upload the image and get the data
+// -- This needs to be done after the video and image processing is done
+// -- Data Streaming would actually be sick if that can work
 
 
+// -- Can capture these frames at regular intervals (every 100ms or every second)
+// -- Each frame can then be sent to AI model, can process these indiviual frames
+function accessCamera(){
+    const videoElement = document.getElementById('videoElement');
 
+    // Button to start the camera
+    const startCameraButton = document.getElementById('startCameraButton');
+    startCameraButton.addEventListener('click', startCamera);
 
-// ==================== UNUSED CODE BELOW ====================
-// These functions are not currently used but might be helpful later
+    // Button to stop the camera
+    const stopCameraButton = document.getElementById('stopCameraButton');
+    stopCameraButton.addEventListener('click', stopCamera);
 
+    let stream;
 
+    // Start the camera feed
+    async function startCamera() {
+        try {
+            // Request access to the camera
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-// Not sure if these are being used
-const simulateResponses = [
-    "Sorry but you're now dead",
-    "Please cover your mouth",
-    "There's a tornado, run away",
-    "I will provide you with assistance"
-]
+            // Display the camera feed in the video element
+            videoElement.srcObject = stream;
+        } catch (error) {
+            console.error('Error accessing the camera:', error);
+        }
+    }
 
-
-/**
- * Fetch the earthquake data close to the given lat and long
- * @param {*} latitude 
- * @param {*} longitude 
- * @param {*} maxradius 
- */
-async function fetchEarthquakeData(latitude, longitude, maxradius=100){
-    const earthquakeResponse = await fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${latitude}&longitude=${longitude}&maxradius=${maxradius}`)
-    if (earthquakeResponse.ok){
-        const earthquakeData = await earthquakeResponse.json()
-
-        // Have different instructions for different levels
-
-        earthquakeData.features[0].properties.mag = 2
-
-        const eqHelp = getEarthquakeResponse(earthquakeData.features[0].properties.mag);
-
-        console.log(eqHelp);
-
-        // Simulate giving supplies
-        // We'd need closest police stations and hospitals
-
-        // console.log(earthquakeData.features[0].properties.mag)
-        // if (earthquakeData.features[0].properties.mag < 4){
-        //     console.log(helpAtDifferentLevels[0])
-        // } else if (earthquakeData.features[0].properties.mag >= 4){
-        //     console.log('Help is on the way')
-        // }
+    // Stop the camera feed
+    function stopCamera() {
+        if (stream) {
+            // Stop all tracks (video and audio) from the stream
+            stream.getTracks().forEach(track => track.stop());
+        }
     }
 }
+
+
+
+
+
