@@ -26,7 +26,6 @@ function gridToLatLon(coords, gridData) {
     return [lat, lon];
 }
 
-
 /**
  * Detects a fire at the specified location and retrieves the fastest path to the nearest hospital.
  * 
@@ -79,12 +78,12 @@ async function detectFireAndGetHospitalPath(latitude, longitude){
  * @param {number} latitude - The latitude of the current fire location.
  * @param {number} longitude - The longitude of the current fire location.
  */
-async function displayFireAndHospitalPath(map, latitude, longitude, hospitals, gridData){
+async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse){
     const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude);
 
     // console.log('GRID DATA', gridData);
     const pathLatLon = hospitalPath.path.map(([x, y]) =>
-        L.latLng(...gridToLatLon([x, y], gridData))
+        L.latLng(...gridToLatLon([x, y], sateliteResponse.gridData))
     );
 
     // L.polyline(pathLatLon, { color: 'red' }).addTo(map);
@@ -120,9 +119,11 @@ async function displayFireAndHospitalPath(map, latitude, longitude, hospitals, g
     const p = document.createElement('p');
     p.id = 'fire-path-message';
     p.textContent = `Please follow the path to the 
-        ${hospitals[hospitalPath.hospital_index].name}`;
+        ${sateliteResponse.hospitals[hospitalPath.hospital_index].name}`;
     main.appendChild(p);
 }
+
+
 
 
 /**
@@ -141,12 +142,14 @@ async function displayFireAndHospitalPath(map, latitude, longitude, hospitals, g
  * @param {Array<Object>} hospitals - An array of hospital objects with `lat`, `lon`, and `name` properties.
  * @param {number} [range=70000] - Optional. The maximum distance (in meters) to consider when searching for the nearest fire (currently unused).
  */
-async function requestAssistance(map, latitude, longitude, hospitals, gridData, range = 70000){
-    let droneLatitude = latitude-0.30;
-    let droneLongitude = longitude-0.50;
+async function requestAssistance(map, latitude, longitude, sateliteResponse, range = 70000){
 
-    let closestDistance = Infinity
-    let closestFire = null
+
+    if(sateliteResponse.isTrafficHigh){
+        console.log('SHES BURNING')
+    }
+    // let closestDistance = Infinity
+    // let closestFire = null
     console.log('LONG',)
     // Organzie this function and add validation in the case that
         // they are to prank us.
@@ -154,9 +157,35 @@ async function requestAssistance(map, latitude, longitude, hospitals, gridData, 
     // If there is confirmation of a fire then the steps below will occur
     // ===========If Fire is Confirmed==============
 
-    await displayFireAndHospitalPath(map, latitude, longitude, hospitals, gridData);
-    // ***** Drone stuff -- try to send just one drone
-            
+    // await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse);
+    
+    // ***** Drone stuff -- try to send just one drone        
+    // Deploy the drone
+    // -- Gotta add more prompts
+
+    if(sateliteResponse.probablyFire.probability == true){
+        console.log('SATRESP', sateliteResponse);
+
+
+        // Disabled the assistance button
+        const assistanceButton = document.getElementById('assistance');
+        assistanceButton.disabled = true;
+        assistanceButton.textContent = 'Assistance is on the way'
+
+        // Deploying the drone
+        defineAndDeployDrone(map, latitude, longitude);
+    } else {
+        console.log(`Satilite does not detect a fire`);
+    }
+
+}
+
+function defineAndDeployDrone(map, latitude, longitude){
+
+    // Drone is defined
+    let droneLatitude = latitude-0.30;
+    let droneLongitude = longitude-0.50;
+
     const droneHelperIcon = L.icon({
         iconUrl: '/images/drone.png',
 
@@ -186,6 +215,8 @@ async function requestAssistance(map, latitude, longitude, hospitals, gridData, 
     // Tracks time between two events
     let previousTime = performance.now();
 
+
+    // Function to move the drone
     function moveDrone(){
         const currentTime = performance.now();
         const deltaTime = (currentTime - previousTime) / 1000
@@ -220,25 +251,24 @@ async function requestAssistance(map, latitude, longitude, hospitals, gridData, 
             requestAnimationFrame(moveDrone);
         }
     }
-        
+
+    // Drone is moving towards person
     moveDrone();
-
-
-    // Calcuates distance of two points on the surface of a sphere
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c; 
-        return distance * 1000; 
-    }
 
 }
 
+// Calcuates distance of two points on the surface of a sphere
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; 
+    return distance * 1000; 
+}
 
 /**
  * Initializes and displays the map using the user's location and nearby data.
@@ -252,11 +282,13 @@ async function requestAssistance(map, latitude, longitude, hospitals, gridData, 
  * @param {number} longitude - The user's longitude
  * @param {Array<Object>} hospitals - Array of nearby hospital data with lat/lon fields
  */
-function initializeMapWithData(latitude, longitude, hospitals, gridData){
-   if(latitude != null &&
-       longitude != null){
+function initializeMapWithData(latitude, longitude, sateliteResponse){
+    // -- I could await all this so that it loads b4 spamming button
+    if(latitude != null &&
+        longitude != null){
 
         // Create the map
+        // -- Can add it to satelitle.map for less params (maybe)
         const map = L.map('map').setView([latitude, longitude], 13);
         console.log(map)
 
@@ -283,7 +315,6 @@ function initializeMapWithData(latitude, longitude, hospitals, gridData){
             popupAnchor: [0, -32]
         });
 
-
         L.marker([latitude, longitude], {icon: personIcon}).addTo(map)
         .bindPopup('This is me')
         .openPopup();
@@ -296,15 +327,141 @@ function initializeMapWithData(latitude, longitude, hospitals, gridData){
             iconAnchor: [16, 32],
             popupAnchor: [0, -32]
         });
-        for (const hospital of hospitals){
+        for (const hospital of sateliteResponse.hospitals){
             const hospitalMarker = L.marker([hospital.lat, hospital.lon], {
                 icon: hospitalIcon
             }).addTo(map);
         }
         
-        // Drone is created and moved to the lat and long given
-        document.getElementById('assistance').addEventListener('click', () => requestAssistance(map, latitude, longitude, hospitals, gridData));
+        // Based on the satelite response, identifies probable fire
+        if(sateliteResponse.probablyFire.probability == true){
+            // Define the probable fire marker
+            const probablyFireIcon = L.icon({
+                iconUrl: '/images/probableFire.jpg',
+                iconSize: [32, 32],    
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+            L.marker(sateliteResponse.probablyFire.probablyFireLocation, 
+                {icon: probablyFireIcon}).addTo(map)
+        } else {
+            console.log('No fires being detected around your area')
+        }
 
+        // Flag attempt
+        let fireFlags = [];
+        let fireMarkers = [];
+
+        map.on('contextmenu', (e) => {
+            const lat = e.latlng.lat;
+            const lon = e.latlng.lng;
+        
+            fireFlags.push({ lat, lon, time: Date.now() });
+        
+            // L.marker([lat, lon], { icon: fireFlagIcon }).addTo(map).bindPopup("🔥 Fire reported");
+            const fireMarker = L.marker([lat, lon], { icon: personIcon })
+                .addTo(map).bindPopup("🔥 Fire reported");
+
+            fireMarkers.push(fireMarker);
+
+            // Can call this afterwards maybe
+            const isTrafficHigh = checkForHighFireTraffic(map, fireFlags, fireMarkers, lat, lon);
+            // console.log(isTrafficHigh);
+
+            // Change the satelite traffic
+            sateliteResponse.isTrafficHigh = isTrafficHigh
+            console.log('Satelite', sateliteResponse.isTrafficHigh);
+
+            // Pass the report object ig in sateliteResponse with all the fireFlags
+        });
+        
+        
+        // Drone is created and moved to the lat and long given
+        document.getElementById('assistance')
+            .addEventListener('click', () => {
+                requestAssistance(map, latitude, longitude, sateliteResponse)
+            });
+    }
+}
+
+// function removeOldFlags(fireFlags, fireMarkers, maxAge = 1000 * 60 * 10) {
+//     const now = Date.now();
+//     fireFlags = fireFlags.filter(f => {
+//         if (now - f.time >= maxAge) {
+//             const markerIndex = fireMarkers.findIndex(marker => 
+//                 marker.getLatLng().lat === f.lat && marker.getLatLng().lng === f.lon
+//             );
+//             if (markerIndex !== -1) {
+//                 fireMarkers[markerIndex].remove();
+//                 fireMarkers.splice(markerIndex, 1); 
+//             }
+//             return false; 
+//         }
+//         return true; 
+//     });
+// }
+
+// function checkForHighFireTraffic(fireFlags, fireMarkers, centerLat, centerLon, radius = 500) {
+
+//     let isTrafficHigh = false;
+//     // removeOldFlags(fireFlags, fireMarkers)
+//     let count = 0;
+//     console.log(count);
+
+//     fireFlags.forEach(flag => {
+//         const distance = calculateDistance(centerLat, centerLon, flag.lat, flag.lon);
+//         if (distance <= radius) {
+//             count++;
+//         }
+//     });
+
+//     if (count >= 5) {
+//         console.log("🔥🔥🔥 High traffic fire area detected!");
+//         isTrafficHigh = true;
+//         // Now you can call defineAndDeployDrone() or flag probablyFire as true
+//     } else {
+//         console.log(`🔥 ${count} fire reports in the area`);
+//     }
+
+//     return isTrafficHigh;
+// }
+
+const warningMarkers = [];
+
+function checkForHighFireTraffic(map, fireFlags, fireMarkers, centerLat, centerLon, radius = 500) {
+
+    const probableFireIcon = L.icon({
+        iconUrl: '/images/probableFire.jpg',
+        iconSize: [60, 32],    
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+
+    let nearbyFlags = fireFlags.filter(flag => {
+        const d = calculateDistance(centerLat, centerLon, flag.lat, flag.lon);
+        return d <= radius;
+    });
+
+    if (nearbyFlags.length >= 5) {
+        console.log("🔥🔥🔥 High traffic fire area detected!");
+
+        const avgLat = nearbyFlags.reduce((sum, f) => sum + f.lat, 0) / nearbyFlags.length;
+        const avgLon = nearbyFlags.reduce((sum, f) => sum + f.lon, 0) / nearbyFlags.length;
+
+        const isAlreadyMarked = warningMarkers.some(m =>
+            calculateDistance(m.getLatLng().lat, m.getLatLng().lng, avgLat, avgLon) < 100
+        );
+
+
+        if (!isAlreadyMarked) {
+            const marker = L.marker([avgLat, avgLon], { 
+                icon: probableFireIcon, zIndexOffset: 1000
+            }).addTo(map)
+                .bindPopup("🚨 Fire warning!");
+            warningMarkers.push(marker);
+        }
+    } else {
+        console.log(`🔥 ${nearbyFlags.length} fire reports in the area`);
     }
 }
 
@@ -409,6 +566,168 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     return { success: true };
 }
 
+
+async function getCityFromCoords(lat, lon) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`, {
+    //   headers: {
+    //     'User-Agent': 'MyApp/1.0 (you@example.com)'
+    //   }
+    });
+  
+    if (!response.ok) {
+      throw new Error("Failed to fetch location data");
+    }
+  
+    const data = await response.json();
+    const city = data.address.city || data.address.town || data.address.village || "Unknown location";
+  
+    return city;
+}
+
+
+// ------------- Regarding fire authentication
+// -- Geo Fencing, use the user's location to determine whether they're
+// -- .. near a high risk area for fires
+
+// Cross referencing: So if there's alot of ppl reporting a fire
+// Option to report a fire
+
+// Does all the fetches
+async function simualteSatelite(latitude, longitude){
+    // There's a satelite watching around the location
+    // Maybe frequency of fire or how huge it look
+    // Validates the videos
+    // insensity determines the amount of support
+    // -- Can be changed through the traffic and videos
+    // -- Thinking of fetching the bounds through the ai api here
+
+    const probablyFireLocation = [latitude + 0.0005, longitude + 0.0005];
+
+    // I need the city to get the city bounds (using AI)
+    // -- Might be able to use the lat and long though (asking the ai)
+    const city = await getCityFromCoords(latitude, longitude);
+
+
+    // Satelite fetches the hospitals
+
+    // Fetch the nearby hospitals (Performance is kinda ehh)
+    // Doesn't fetch all the hospitals -- fix this
+    // Cache this on load up or maybe make it global
+
+    // Maybe this can be refactored in the satetile?
+    const hospitals = await fetchNearbyHospitals(latitude, longitude);
+    if(hospitals.length == 0){
+        // -- Make this a paragraph
+        console.log('There are no hospitals within your location');
+    }
+
+    console.log('HOSPITALS',hospitals);
+
+    
+    // Sends the hospitals over the backend
+    // Write it over to a json
+    // --- Add validation this needs to work ---
+    
+    // --- Make it that it doesn't reload everytime page reloads
+    
+
+    // -- Random bounds
+    // const bounds = {
+    //     min_lat: -61.83,
+    //     max_lat: 61.17,
+    //     min_lon: -126.32,
+    //     max_lon: 170.41
+    // };
+    
+    // const dimensions = {
+    //     width: 580,
+    //     height: 270
+    // };
+
+    // -- Rome bounds
+    // const bounds = {
+    //     min_lat: 41.8,
+    //     max_lat: 42.1,
+    //     min_lon: 12.4,
+    //     max_lon: 12.6
+    // };
+
+    // const dimensions = {
+    //     width: 500,
+    //     height: 500
+    // };
+
+    // Gotta get the location from geolocation
+    // Maybe I can also send the bounds from the satetline object
+    // -- Montreal bounds
+    // -- Test out when python is fixed
+    const gridData = generateGridData(latitude, longitude);
+    // console.log('MA BOUNDS', bounds);
+    
+    // const gridData = {
+    //     "bounds": {
+    //         "min_lat": 45.4,
+    //         "max_lat": 45.7,
+    //         "min_lon": -73.7,
+    //         "max_lon": -73.4
+    //     },
+    //     "dimensions": {
+    //         "width": 500,
+    //         "height": 500
+    //     }
+
+    // }
+
+
+
+    // const gridData = await writeDataToJson(hospitals, bounds, dimensions);
+
+    // Hospital and Grid bounds are written to json file, (might move to satelite)
+    await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
+
+    console.log('Files saved to json')
+    console.log('✅ Hospitals saved');
+    console.log('📦 Grid bounds:', gridData.bounds);
+    console.log('📏 Grid dimensions:', gridData.dimensions);
+
+    return {
+        "location" : "",
+        "isFire" : false,
+        "isTrafficHigh": false,
+        "intensity" : 2,
+        "probablyFire" : {
+            "probability" : true,
+            "probablyFireLocation" : probablyFireLocation
+        },
+        "hospitals" : hospitals,
+        "gridData" : gridData,
+        "city" : city
+        
+    }
+}
+
+// Grid Generation
+function generateGridData(centerLat, centerLon, distanceKm = 10) {
+    const latDelta = distanceKm / 111; 
+    const lonDelta = distanceKm / (111 * Math.cos(centerLat * Math.PI / 180));
+
+    const bounds = {
+        min_lat: centerLat - latDelta / 2,
+        max_lat: centerLat + latDelta / 2,
+        min_lon: centerLon - lonDelta / 2,
+        max_lon: centerLon + lonDelta / 2
+    };
+    const dimensions = {
+        width: 500,
+        height: 500
+    }
+    return {
+        "bounds" : bounds,
+        "dimensions" : dimensions
+    }
+}
+
+
 /**
  * Retrieves the user's geolocation and fetches surrounding data.
  *
@@ -428,91 +747,23 @@ async function fetchAndProcessUserSurroundings(){
     if (navigator.geolocation){
 
         navigator.geolocation.getCurrentPosition(async (position) => {
-
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
-
-            // In rome
-            // const latitude = -15.72;
-            // const longitude = 45.09;
-
-            document.getElementById('location').textContent = `Location: 
-                Latitude: ${latitude}, Longitude: ${longitude}`;
-
             try{
-                
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
 
-                // Fetch the nearby hospitals (Performance is kinda ehh)
-                // Doesn't fetch all the hospitals -- fix this
-                // Cache this on load up or maybe make it global
-                const hospitals = await fetchNearbyHospitals(latitude, longitude);
-                if(hospitals.length == 0){
-                    // -- Make this a paragraph
-                    console.log('There are no hospitals within your location');
-                }
+                // Optional: For testing Rome
+                // const latitude = -15.72;
+                // const longitude = 45.09;
 
-                console.log('HOSPITALS',hospitals);
-    
-                // Sends the hospitals over the backend
-                // Write it over to a json
-                // --- Add validation this needs to work ---
-                
-                // --- Make it that it doesn't reload everytime page reloads
-                
+                // document.getElementById('location').textContent = `Location: 
+                //     Latitude: ${latitude}, Longitude: ${longitude}`;
+                const sateliteResponse = await simualteSatelite(latitude, longitude)
 
-                // -- Random bounds
-                // const bounds = {
-                //     min_lat: -61.83,
-                //     max_lat: 61.17,
-                //     min_lon: -126.32,
-                //     max_lon: 170.41
-                // };
-                
-                // const dimensions = {
-                //     width: 580,
-                //     height: 270
-                // };
+                document.getElementById('location').textContent = `You are in 
+                    ${sateliteResponse.city}: Latitude: ${latitude}, Longitude: ${longitude}`;
 
-                // -- Rome bounds
-                // const bounds = {
-                //     min_lat: 41.8,
-                //     max_lat: 42.1,
-                //     min_lon: 12.4,
-                //     max_lon: 12.6
-                // };
-
-                // const dimensions = {
-                //     width: 500,
-                //     height: 500
-                // };
-
-                // -- Montreal bounds
-                const gridData = {
-                    "bounds": {
-                        "min_lat": 45.4,
-                        "max_lat": 45.7,
-                        "min_lon": -73.7,
-                        "max_lon": -73.4
-                    },
-                    "dimensions": {
-                        "width": 500,
-                        "height": 500
-                    }
-
-                }
-    
-                // const gridData = await writeDataToJson(hospitals, bounds, dimensions);
-
-                await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
-    
-                console.log('Files saved to json')
-                console.log('✅ Hospitals saved');
-                console.log('📦 Grid bounds:', gridData.bounds);
-                console.log('📏 Grid dimensions:', gridData.dimensions);
-    
                 // Uoad the map with the markers
-                initializeMapWithData(latitude, longitude, hospitals, gridData);
+                initializeMapWithData(latitude, longitude, sateliteResponse);
 
             } catch (error){
                 console.error('❌ Error during processing:', error);
@@ -590,13 +841,6 @@ const handleAIButton =  async (e) => {
 
 
 
-// ------------- Regarding fire authentication
-// -- Geo Fencing, use the user's location to determine whether they're
-// -- .. near a high risk area for fires
-
-// Cross referencing: So if there's alot of ppl reporting a fire
-// Option to report a fire
-
 
 /**
  * Main setup (Comment in the future*)
@@ -616,11 +860,10 @@ function setup(){
     const form = document.getElementById('uploadForm');
     form.addEventListener('submit', (event) => getImageOrVideo(event));
 
-
-    accessCamera()
+    // accessCamera()
 
     // Get person's location
-    // fetchAndProcessUserSurroundings();
+    fetchAndProcessUserSurroundings();
 
     // When the button is clicked
     // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
@@ -628,7 +871,6 @@ function setup(){
     // AI help chat
     document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
 }
-
 
 
 function getImageOrVideo(event){
@@ -705,5 +947,38 @@ function accessCamera(){
 
 
 
-
-
+/// --- TODO
+/**
+ * 
+ * If traffic is high (isTrafficHigh) then there is most probably a fire
+ * Put a probable fire icon.
+ * 
+ * This is one form of validating whether their videos are real
+ * If variable is one, or you send a video (which api returns fire status)
+ * Then you will be assisted.
+ * 
+ * Will be prompted for supplies(Do you need supplies) -> Drone
+ * How big is the fire -> Send more authorities
+ * Refer to the AI for assisted help
+ * By default, if nothing is checked it will mark as fire as notify
+ *  the authorities
+ * 
+ * Unless the video is seen to be huge, then it will automatically deploy the
+ *  drone
+ * 
+ * In the case where they can get a video, they can get assistnace (figure this out),
+ *  based on the probably fire level, (based on how much traffic i.e, how
+ *  many people are reporting a fire)
+ * 
+ * Option to report a fire in a certain location
+ *  Drag and drop marker or right click to flag a location that you believe
+ *  has a fire, if there's a lot of flag and that matches the satelitle view
+ *  (There's always a satelite watching to see if there's a fire), so which satelite
+ *  confirmation + flag traffic + video evidence, then we can resort to
+ *  a general conclusion (for now)
+ * 
+ *  [This system becomes more complex and easy to abuse:]
+ *      - Camp area where there's high traffic and send troll video
+ *      - Ideally the file dropper would recognize the location (no resources for that)
+ *             or just the allow the video streaming option for real time streaming
+ */

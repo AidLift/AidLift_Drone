@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from model_architechture import ConvNet  
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
@@ -7,8 +12,18 @@ from PIL import Image
 import os
 import cv2
 import numpy as np
+import json
+from pathlib import Path
+from flask_cors import CORS
+from services.path_service import PathService
+
+
+path_service = PathService()
+
 
 app = Flask(__name__)
+
+CORS(app)
 
 # Configuration
 UPLOAD_FOLDER = 'tmp_uploads'
@@ -143,10 +158,60 @@ def detect_fire():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+
+
+@app.route('/save-hospitals', methods=['POST'])
+def save_hospitals():
+    # Get the JSON data from the request
+    try:
+        hospitals_data = request.get_json()['hospitals']
+        save_path = Path("data/bc_grid")
+        save_path.mkdir(parents=True, exist_ok=True) 
+ 
+        # Write to hospitals.json file
+        with open(save_path / 'hospitals.json', 'w') as f:
+            json.dump(hospitals_data, f, indent=4)
+ 
+        return jsonify({"message": "Hospitals data saved successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/save-grid-info', methods=['POST'])
+def save_grid_info():
+    try:
+        grid_data = request.get_json()
+        
+        bounds = grid_data['bounds']
+        dimensions = grid_data['dimensions']
+
+        # Define where to save the grid info
+        save_path = Path("data/bc_grid")
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        # Write to grid_info.json file
+        with open(save_path / 'grid.config.json', 'w') as f:
+            json.dump(grid_data, f, indent=4)
+        
+    
+        return jsonify({
+            "message": "Grid info saved successfully!",
+            "bounds": bounds,
+            "dimensions": dimensions
+        }), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
-    #d
+
+
+
     
     
