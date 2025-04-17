@@ -15,8 +15,6 @@ class PathService:
         if not self.grid.load():
             return {"error": "Grid is not properly loaded, data is missing."}
 
-        print('PYTHON HERE')
-
         x, y = self._latlon_to_grid(lat, lon)
    
         if not self._validate_coordinates(x, y):
@@ -35,6 +33,7 @@ class PathService:
         if hospital_index == -1:
             return {"error": "Hospital index not found"}
         
+
         return {
             "fire": [x, y],
             "hospital": list(hospital),
@@ -51,7 +50,7 @@ class PathService:
             int(x_scale * (self.grid.width - 1)),
             int((1 - y_scale) * (self.grid.height - 1))  # Flip y-axis
         )
-    
+       
     def _validate_coordinates(self, x, y):
         return (0 <= x < self.grid.width and 
                 0 <= y < self.grid.height)
@@ -64,7 +63,8 @@ class PathService:
         #     if coords == tuple(hospital):
         #         return idx
         # return -1
-    
+        print('hospitals', self.grid.hospitals)
+        print('hospital', hospital)
         for idx, coords in enumerate(self.grid.hospitals):
             if all(abs(a - b) < 1e-6 for a, b in zip(coords, hospital)):
                 return idx

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', setup)
 
   
 
+// First function
 function gridToLatLon(coords, gridData) {
     const { min_lat, max_lat, min_lon, max_lon } = gridData.bounds;
     const { width, height } = gridData.dimensions;
@@ -25,6 +26,7 @@ function gridToLatLon(coords, gridData) {
   
     return [lat, lon];
 }
+
 
 /**
  * Detects a fire at the specified location and retrieves the fastest path to the nearest hospital.
@@ -82,7 +84,10 @@ async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResp
     const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude);
 
     // console.log('GRID DATA', gridData);
-    const pathLatLon = hospitalPath.path.map(([x, y]) =>
+    console.log('HosI',hospitalPath.escape_route);
+    const pathLatLon = hospitalPath.escape_route.map(([x, y]) =>
+
+    // const pathLatLon = hospitalPath.path.map(([x, y]) =>
         L.latLng(...gridToLatLon([x, y], sateliteResponse.gridData))
     );
 
@@ -157,7 +162,7 @@ async function requestAssistance(map, latitude, longitude, sateliteResponse, ran
     // If there is confirmation of a fire then the steps below will occur
     // ===========If Fire is Confirmed==============
 
-    // await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse);
+    await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse);
     
     // ***** Drone stuff -- try to send just one drone        
     // Deploy the drone
@@ -168,9 +173,9 @@ async function requestAssistance(map, latitude, longitude, sateliteResponse, ran
 
 
         // Disabled the assistance button
-        const assistanceButton = document.getElementById('assistance');
-        assistanceButton.disabled = true;
-        assistanceButton.textContent = 'Assistance is on the way'
+        // const assistanceButton = document.getElementById('assistance');
+        // assistanceButton.disabled = true;
+        // assistanceButton.textContent = 'Assistance is on the way'
 
         // Deploying the drone
         defineAndDeployDrone(map, latitude, longitude);
@@ -579,6 +584,7 @@ async function getCityFromCoords(lat, lon) {
     }
   
     const data = await response.json();
+    console.log(data);
     const city = data.address.city || data.address.town || data.address.village || "Unknown location";
   
     return city;
@@ -707,7 +713,7 @@ async function simualteSatelite(latitude, longitude){
 }
 
 // Grid Generation
-function generateGridData(centerLat, centerLon, distanceKm = 10) {
+function generateGridData(centerLat, centerLon, distanceKm = 20) {
     const latDelta = distanceKm / 111; 
     const lonDelta = distanceKm / (111 * Math.cos(centerLat * Math.PI / 180));
 
@@ -752,8 +758,8 @@ async function fetchAndProcessUserSurroundings(){
                 const longitude = position.coords.longitude;
 
                 // Optional: For testing Rome
-                // const latitude = -15.72;
-                // const longitude = 45.09;
+                // const latitude = 41.9028
+                // const longitude = 12.4964
 
                 // document.getElementById('location').textContent = `Location: 
                 //     Latitude: ${latitude}, Longitude: ${longitude}`;

@@ -96,6 +96,14 @@ def process_video(video_path):
 
 def generate_escape_path(lat, lon):
     """Mock pathfinding - replace with your A* implementation"""
+    pathserv = path_service.process_detection(lat, lon)
+    return {
+        "fire": [int(lat*100)%90, int(lon*100)%90],  # Mock grid coords
+        "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
+        "path": pathserv["path"],
+        "hospital_index": pathserv["hospital_index"],
+        "distance_km": round(abs(lat - lon) * 110, 2),
+    }
     return {
         "fire": [int(lat*100)%90, int(lon*100)%90],  # Mock grid coords
         "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
@@ -105,6 +113,7 @@ def generate_escape_path(lat, lon):
         ],
         "distance_km": round(abs(lat - lon) * 110, 2)
     }
+
 
 @app.route('/detect-fire', methods=['POST'])
 def detect_fire():
@@ -141,7 +150,8 @@ def detect_fire():
         
         # Generate emergency response
         path_data = generate_escape_path(lat, lon)
-        
+        print(path_data["hospital_index"], ' hospindex')
+
         response = {
             "status": "success",
             "emergency": True,
@@ -152,7 +162,8 @@ def detect_fire():
                 "distance": f"{path_data['distance_km']} km"
             },
             "escape_route": path_data["path"],
-            "confidence": f"{confidence if 'confidence' in locals() else 95:.0%}"
+            "confidence": f"{confidence if 'confidence' in locals() else 95:.0%}",
+            "hospital_index" : path_data["hospital_index"]
         }
         return jsonify(response)
     

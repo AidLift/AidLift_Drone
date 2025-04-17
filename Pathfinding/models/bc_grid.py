@@ -43,10 +43,8 @@ class BCGrid:
         # print('HOSPI',self.hospitals)
         
         # 0=empty, 1=obstacle, 2=hospital, 3=fire
-        print(self.hospitals)
         for x, y in self.hospitals:
             self.grid[y, x] = 2
-        print('22331922')
         
             
         for x, y in self.obstacles:
