@@ -221,6 +221,14 @@ def save_grid_info():
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
+@app.route('/get-hospitals', methods=['GET'])
+def get_hospitals():
+    try:
+        with open("data/bc_grid/hospitals.json", "r") as f:
+            hospitals = json.load(f)
+        return jsonify({"hospitals": hospitals}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 
