@@ -230,7 +230,26 @@ def get_hospitals():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/sync-hospitals', methods=['GET'])
+def sync_hospitals():
+    try:
+        # 1. Fetch hospital data from Server A
+        response = requests.get("https://aidlift-drone.onrender.com/get-hospitals")
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch from Server A"}), 500
 
+        hospitals_data = response.json()['hospitals']
+
+        # 2. Save to local hospitals.json
+        save_path = Path("data/bc_grid")
+        save_path.mkdir(parents=True, exist_ok=True)
+        with open(save_path / 'hospitals.json', 'w', encoding='utf-8') as f:
+            json.dump(hospitals_data, f, indent=4, ensure_ascii=False)
+
+        return jsonify({"message": "✅ Hospitals synced from Server A"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
     
     
