@@ -43,7 +43,7 @@ function gridToLatLon(coords, gridData) {
 async function detectFireAndGetHospitalPath(latitude, longitude){
     try {
         // const res = await fetch('http://192.168.2.135:5000/detect-fire', {
-        const res = await fetch('http://10.230.123.44:5000/detect-fire', {
+        const res = await fetch('http://10.0.0.56:5000/detect-fire', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -532,7 +532,7 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     if (hospitalsChanged) {
         try {
             
-            await fetch('http://10.230.123.44:5000/save-hospitals', {
+            await fetch('http://10.0.0.56:5000/save-hospitals', {
             // await fetch('http://192.168.2.135:5000/save-hospitals', {
 
                 method: 'POST',
@@ -549,7 +549,7 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     // Handle bounds and dimensions changes
     if (boundsChanged || dimensionsChanged) {
         try {
-            await fetch('http://10.230.123.44:5000/save-grid-info', {
+            await fetch('http://10.0.0.56:5000/save-grid-info', {
             // await fetch('http://192.168.2.135:5000/save-grid-info', {
 
                 method: 'POST',
@@ -869,6 +869,20 @@ function setup(){
     // -- Maybe it should always be enabled
     // const button = document.getElementById('assistance');
     // button.disabled = true;
+    // When user clicks the arrow, scroll to main site
+    document.getElementById('scroll-down').addEventListener('click', () => {
+        document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
+    });
+    // Detect first scroll and auto-jump to next section
+    let hasScrolled = false;
+    window.addEventListener('wheel', (e) => {
+    if (!hasScrolled) {
+        hasScrolled = true;
+        document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
+        }
+    }, { once: true });
+
+
     const form = document.getElementById('uploadForm');
     form.addEventListener('submit', (event) => getImageOrVideo(event));
 
@@ -958,6 +972,7 @@ function accessCamera(){
 }
 
 
+  
 
 /// --- TODO
 /**
