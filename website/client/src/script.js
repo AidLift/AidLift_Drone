@@ -42,8 +42,8 @@ function gridToLatLon(coords, gridData) {
  */
 async function detectFireAndGetHospitalPath(latitude, longitude){
     try {
-        const res = await fetch('http://192.168.2.135:5000/detect-fire', {
-        // const res = await fetch('http://10.230.123.44:5000/detect-fire', {
+        // const res = await fetch('http://192.168.2.135:5000/detect-fire', {
+        const res = await fetch('http://10.230.123.44:5000/detect-fire', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -531,7 +531,10 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     // Handle hospital changes
     if (hospitalsChanged) {
         try {
-            await fetch('http://192.168.2.135:5000/save-hospitals', {
+            
+            await fetch('http://10.230.123.44:5000/save-hospitals', {
+            // await fetch('http://192.168.2.135:5000/save-hospitals', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -546,7 +549,9 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     // Handle bounds and dimensions changes
     if (boundsChanged || dimensionsChanged) {
         try {
-            await fetch('http://192.168.2.135:5000/save-grid-info', {
+            await fetch('http://10.230.123.44:5000/save-grid-info', {
+            // await fetch('http://192.168.2.135:5000/save-grid-info', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bounds, dimensions })
@@ -765,6 +770,7 @@ async function fetchAndProcessUserSurroundings(){
                 //     Latitude: ${latitude}, Longitude: ${longitude}`;
                 const sateliteResponse = await simualteSatelite(latitude, longitude)
 
+                console.log('HOSPITAL', sateliteResponse.hospitals)
                 document.getElementById('location').textContent = `You are in 
                     ${sateliteResponse.city}: Latitude: ${latitude}, Longitude: ${longitude}`;
 
