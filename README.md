@@ -20,7 +20,7 @@ KEY Features
 
 > Advanced Computer Vision
 
-    >>Survivor detection
+    >>AI assistant chat
 
     >>Obstacle identification
 
