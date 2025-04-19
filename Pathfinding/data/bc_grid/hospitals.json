@@ -1,0 +1,192 @@
+[
+    {
+        "name": "CLSC Le Plateau-Mont-Royal",
+        "lat": 45.5364634,
+        "lon": -73.573798
+    },
+    {
+        "name": "Complexe m\u00e9dicale Saint Laurent",
+        "lat": 45.5161608,
+        "lon": -73.696249
+    },
+    {
+        "name": "CHUM",
+        "lat": 45.5116095,
+        "lon": -73.5567709
+    },
+    {
+        "name": "Centre dentaire Westminster",
+        "lat": 45.4538544,
+        "lon": -73.6473763
+    },
+    {
+        "name": "Clinique Dentaire Cartier - Verdun",
+        "lat": 45.4560135,
+        "lon": -73.572119
+    },
+    {
+        "name": "St. Mary's Hospital",
+        "lat": 45.494935,
+        "lon": -73.6238467
+    },
+    {
+        "name": "H\u00f4pital g\u00e9n\u00e9ral de Montr\u00e9al",
+        "lat": 45.4971017,
+        "lon": -73.5885612
+    },
+    {
+        "name": "Hopital de r\u00e9adaptation Villa Medica",
+        "lat": 45.5149687,
+        "lon": -73.5687027
+    },
+    {
+        "name": "H\u00f4pital Charles-Le Moyne",
+        "lat": 45.496966,
+        "lon": -73.4865496
+    },
+    {
+        "name": "CUSM - Centre Universitaire de Sant\u00e9 McGill - Site Glen",
+        "lat": 45.4740126,
+        "lon": -73.6004186
+    },
+    {
+        "name": "Institut universitaire en sant\u00e9 mentale Douglas",
+        "lat": 45.4424837,
+        "lon": -73.5860219
+    },
+    {
+        "name": "H\u00f4tel-Dieu (CHUM)",
+        "lat": 45.5142927,
+        "lon": -73.5787947
+    },
+    {
+        "name": "CLSC Hochelaga-Maisonneuve",
+        "lat": 45.5514576,
+        "lon": -73.5411306
+    },
+    {
+        "name": "Institut de r\u00e9adaptation Gingras-Lindsay-de-Montr\u00e9al",
+        "lat": 45.5073165,
+        "lon": -73.6289032
+    },
+    {
+        "name": "Centre hospitalier de Lachine",
+        "lat": 45.4407912,
+        "lon": -73.6769624
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5747218,
+        "lon": -73.5769004
+    },
+    {
+        "name": "H\u00f4pital Notre-Dame",
+        "lat": 45.5256657,
+        "lon": -73.5625139
+    },
+    {
+        "name": "Midwifery Clinic",
+        "lat": 45.4823568,
+        "lon": -73.5634286
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5401972,
+        "lon": -73.5768045
+    },
+    {
+        "name": "H\u00f4pital Jean-Talon",
+        "lat": 45.5459549,
+        "lon": -73.6095003
+    },
+    {
+        "name": "CLSC de Villeray",
+        "lat": 45.5514719,
+        "lon": -73.6212426
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5410302,
+        "lon": -73.6903971
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.5176559,
+        "lon": -73.6806972
+    },
+    {
+        "name": "Unnamed Hospital",
+        "lat": 45.4207282,
+        "lon": -73.6227096
+    },
+    {
+        "name": "H\u00f4pital Richardson",
+        "lat": 45.4721377,
+        "lon": -73.6457941
+    },
+    {
+        "name": "Hospital Catherine Booth",
+        "lat": 45.4640007,
+        "lon": -73.6355907
+    },
+    {
+        "name": "Institut universitaire de g\u00e9riatrie de Montr\u00e9al",
+        "lat": 45.4912514,
+        "lon": -73.6242873
+    },
+    {
+        "name": "Centre Saint-Lambert",
+        "lat": 45.4983035,
+        "lon": -73.503598
+    },
+    {
+        "name": "Centre hospitalier Jacques-Viger",
+        "lat": 45.5146726,
+        "lon": -73.5553963
+    },
+    {
+        "name": "Institut universitaire de g\u00e9riatrie de Montr\u00e9al",
+        "lat": 45.4906934,
+        "lon": -73.6275392
+    },
+    {
+        "name": "Centre de r\u00e9adaptation Constance-Lethbridge",
+        "lat": 45.4584091,
+        "lon": -73.6339913
+    },
+    {
+        "name": "H\u00f4pital de Verdun",
+        "lat": 45.4637363,
+        "lon": -73.5637627
+    },
+    {
+        "name": "H\u00f4pital Mount Sinai",
+        "lat": 45.4736022,
+        "lon": -73.6578379
+    },
+    {
+        "name": "Sir Mortimer B. Davis Jewish General Hospital",
+        "lat": 45.4970431,
+        "lon": -73.6300222
+    },
+    {
+        "name": "CHUM - Centre Hospitalier de l'Universit\u00e9 de Montr\u00e9al",
+        "lat": 45.5112797,
+        "lon": -73.5570291
+    },
+    {
+        "name": "Institut-H\u00f4pital neurologique de Montr\u00e9al",
+        "lat": 45.5092004,
+        "lon": -73.5812281
+    },
+    {
+        "name": "Centre Hospitalier Universitaire Sainte-Justine",
+        "lat": 45.5028713,
+        "lon": -73.6248258
+    },
+    {
+        "name": "H\u00f4pital Maisonneuve-Rosemont",
+        "lat": 45.5757845,
+        "lon": -73.5597631
+    }
+]
