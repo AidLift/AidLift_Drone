@@ -246,7 +246,7 @@ def sync_hospitals():
         with open(save_path / 'hospitals.json', 'w', encoding='utf-8') as f:
             json.dump(hospitals_data, f, indent=4, ensure_ascii=False)
 
-        return jsonify({"message": "✅ Hospitals synced from Server A"}), 200
+        return jsonify({"message": " Hospitals synced from Server A"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
