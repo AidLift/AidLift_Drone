@@ -50,7 +50,9 @@ Fire Detection Model
 Download the trained model weights:  
 [Download best_model.pth](https://drive.google.com/file/d/1XrvOBVW-39XWLYGsJGZpTZ67SgAxSddw/view?usp=sharing)
 
-Place it in: `Pathfinding/models/best_model.pth`
+here is the link to the extended version of the model
+[Download best_model_extended.pth](https://drive.google.com/file/d/1kI0P8QFgpY6GJsSKKoA1V6wPcpC0Vi_t/view?usp=sharing)
+Place it in: `Pathfinding/models/best_model_extended.pth`
 
 ATTRIBUTIONS
 
