@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', setup)
 
 // -- Implement caching, hospitals and all that (location is always changing so not that)
 
-  
 
 // First function
 function gridToLatLon(coords, gridData) {
@@ -40,19 +39,43 @@ function gridToLatLon(coords, gridData) {
  * @param {number} longitude - The longitude of the current location.
  * @returns {Promise<Object|null>} A promise that resolves to the response data containing the path to the nearest hospital or `null` if an error occurred.
  */
-async function detectFireAndGetHospitalPath(latitude, longitude){
-    try {
+async function detectFireAndGetHospitalPath(latitude, longitude, mediaFile){
+    try { 
+
+        // Fix up this logic
+        let res;
+        if(mediaFile){
+            console.log('IMAGE IS NOT HERE')
+            const formData = new FormData();
+            formData.append("latitude", latitude);
+            formData.append("longitude", longitude);
+            formData.append("media", mediaFile);
+    
+            res = await fetch('http://192.168.2.135:5000/detect-fire', {
+                method: 'POST',
+                body: formData,
+            });
+        }else{
+            console.log('HELLO')
+            res = await fetch('http://192.168.2.135:5000/detect-fire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                })
+            });
+
+        }
+        // const formData = new FormData();
+        // formData.append('media', mediaFile);
+        // formData.append('latitude', latitude);
+        // formData.append('longitude', longitude); 
+
         // const res = await fetch('http://192.168.2.135:5000/detect-fire', {
-        const res = await fetch('http://10.230.123.44:5000/detect-fire', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                latitude: latitude,
-                longitude: longitude
-            })
-        });
+
 
         if (!res.ok) {
             throw new Error(`Server responded with status ${res.status}`);
@@ -80,10 +103,18 @@ async function detectFireAndGetHospitalPath(latitude, longitude){
  * @param {number} latitude - The latitude of the current fire location.
  * @param {number} longitude - The longitude of the current fire location.
  */
-async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse){
-    const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude);
+async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile){
+    const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude, mediaFile);
 
     // console.log('GRID DATA', gridData);
+    console.log(hospitalPath);
+
+    if(hospitalPath.fire_detected == false){
+        console.log('There is no fire within the area')
+        return
+    } 
+    console.log('THERE IS A FIREEEEEE')
+    console.log('DATA', hospitalPath)
     console.log('HosI',hospitalPath.escape_route);
     const pathLatLon = hospitalPath.escape_route.map(([x, y]) =>
 
@@ -162,27 +193,75 @@ async function requestAssistance(map, latitude, longitude, sateliteResponse, ran
     // If there is confirmation of a fire then the steps below will occur
     // ===========If Fire is Confirmed==============
 
-    await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse);
     
     // ***** Drone stuff -- try to send just one drone        
     // Deploy the drone
     // -- Gotta add more prompts
 
+    let mediaFile = null
     if(sateliteResponse.probablyFire.probability == true){
         console.log('SATRESP', sateliteResponse);
+        // Display the form
+        document.getElementById('images').style.display = 'block';
+    
+        // Disable the button
+        const button = document.getElementById('assistance');
+        button.disabled = true;
 
+        // Display this after the button is pressed
+
+
+        // Open up a popup
+        const form = document.getElementById('uploadForm');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+    
+            const mediaInput = document.getElementById('mediaInput');
+            const file = mediaInput.files[0];
+    
+            if (!file) {
+                console.log('No file uploaded');
+                alert('Please upload an image or video first.');
+                return;
+            }
+    
+            // Set media file to file
+            mediaFile = file
+
+            const fileHash = await calculateFileHash(mediaFile);
+            console.log('Original file hash:', fileHash);
+
+
+            console.log('File uploaded:', file.name);
+            defineAndDeployDrone(map, latitude, longitude);
+            await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile);
+
+        });
 
         // Disabled the assistance button
         // const assistanceButton = document.getElementById('assistance');
         // assistanceButton.disabled = true;
         // assistanceButton.textContent = 'Assistance is on the way'
-
         // Deploying the drone
-        defineAndDeployDrone(map, latitude, longitude);
+
+
+
     } else {
         console.log(`Satilite does not detect a fire`);
     }
 
+}
+
+
+
+//// HASHING
+
+async function calculateFileHash(file) {
+    const arrayBuffer = await file.arrayBuffer(); // Read file into buffer
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer); // Hash it
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
+    return hashHex;
 }
 
 function defineAndDeployDrone(map, latitude, longitude){
@@ -381,7 +460,7 @@ function initializeMapWithData(latitude, longitude, sateliteResponse){
         });
         
         
-        // Drone is created and moved to the lat and long given
+        // Drone is created and moved to the lat and long given      
         document.getElementById('assistance')
             .addEventListener('click', () => {
                 requestAssistance(map, latitude, longitude, sateliteResponse)
@@ -532,7 +611,7 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     if (hospitalsChanged) {
         try {
             
-            await fetch('http://10.230.123.44:5000/save-hospitals', {
+            await fetch('http://192.168.2.135:5000/save-hospitals', {
             // await fetch('http://192.168.2.135:5000/save-hospitals', {
 
                 method: 'POST',
@@ -549,7 +628,7 @@ async function writeDataToJson(hospitals, bounds, dimensions) {
     // Handle bounds and dimensions changes
     if (boundsChanged || dimensionsChanged) {
         try {
-            await fetch('http://10.230.123.44:5000/save-grid-info', {
+            await fetch('http://192.168.2.135:5000/save-grid-info', {
             // await fetch('http://192.168.2.135:5000/save-grid-info', {
 
                 method: 'POST',
@@ -862,15 +941,31 @@ function setup(){
     // Could maybe display a game or a loading screen in the wait time
     // Instead of boring map
 
+    // const hxp = async () => {
+    //     const h1 = await fetchHospitals()
+    //     console.log('dhdhdh',h1)
+    // }
+
+    // hxp()
     // Display the original map
     // -- Add a random spawn everytime
 
     // Disable the help button until all the information is retrieved
     // -- Maybe it should always be enabled
-    // const button = document.getElementById('assistance');
-    // button.disabled = true;
-    const form = document.getElementById('uploadForm');
-    form.addEventListener('submit', (event) => getImageOrVideo(event));
+
+    // When user clicks the arrow, scroll to main site
+    document.getElementById('scroll-down').addEventListener('click', () => {
+        document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
+    });
+    // Detect first scroll and auto-jump to next section
+    let hasScrolled = false;
+    window.addEventListener('wheel', (e) => {
+    if (!hasScrolled) {
+        hasScrolled = true;
+        document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
+        }
+    }, { once: true });
+
 
     // accessCamera()
 
@@ -885,33 +980,53 @@ function setup(){
 }
 
 
-function getImageOrVideo(event){
-    event.preventDefault();
-    console.log('SENT')
-
-    const mediaInput = document.getElementById('mediaInput');
-    const file = mediaInput.files[0];
-
-    if (file) {
-        console.log("Selected file:", file);
-        console.log("File type:", file.type);
-  
-        const formData = new FormData();
-        formData.append("media", file);
-  
-        fetch('/api/upload-media', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.text())
-        .then(result => {
-          console.log("Upload success:", result);
-        })
-        .catch(error => {
-          console.error("Upload error:", error);
-        });
+async function fetchHospitals() {
+    try {
+      const response = await fetch('http://192.168.2.135:5000/get-hospitals');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-}
+  
+      const data = await response.json();
+      console.log("Hospitals:", data.hospitals);
+      
+      // You can now use data.hospitals to do stuff in your UI
+      return data.hospitals;
+  
+    } catch (error) {
+      console.error("Failed to fetch hospitals:", error);
+    }
+  }
+
+
+// function getImageOrVideo(event){
+//     event.preventDefault();
+//     console.log('SENT')
+
+//     const mediaInput = document.getElementById('mediaInput');
+//     const file = mediaInput.files[0];
+
+//     if (file) {
+//         console.log("Selected file:", file);
+//         console.log("File type:", file.type);
+  
+//         const formData = new FormData();
+//         formData.append("media", file);
+  
+//         fetch('/api/upload-media', {
+//           method: 'POST',
+//           body: formData
+//         })
+//         .then(response => response.text())
+//         .then(result => {
+//           console.log("Upload success:", result);
+//         })
+//         .catch(error => {
+//           console.error("Upload error:", error);
+//         });
+//       }
+// }
 
 
 
@@ -958,6 +1073,7 @@ function accessCamera(){
 }
 
 
+  
 
 /// --- TODO
 /**
