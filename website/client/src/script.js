@@ -881,7 +881,9 @@ async function fetchAndProcessUserSurroundings(){
 // Api call to the AI maybe implement caching too
 const callTheAI = async (message) => {
     try {
-        const response = await fetch('/api/chat', {
+        // const response = await fetch('/api/chat', {
+        const response = await fetch('/chat', {
+
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
