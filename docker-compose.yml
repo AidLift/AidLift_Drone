@@ -1,0 +1,23 @@
+services:
+
+  frontend:
+    build:
+      context: ./website
+      dockerfile: javascript.Dockerfile
+      target: frontend
+    working_dir: /app/client
+    command: npm start
+    ports:
+      - "80:3000"
+
+  backend:
+    build:
+      context: ./website
+      dockerfile: javascript.Dockerfile
+      target: backend
+    working_dir: /app
+    command: node server/api.js
+    depends_on:
+      - frontend
+    ports:
+      - "3000:3000"

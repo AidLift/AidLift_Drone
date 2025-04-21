@@ -1,0 +1,70 @@
+Wildfire Pathfinding Backend
+============================================
+
+What This Does:
+- Takes wildfire coordinates (latitude/longitude) from satellite/drone
+- Finds shortest path to nearest hospital using A* algorithm
+- Returns grid positions for visualization
+
+Tech Stack:
+- Flask (lightweight web server)
+- NumPy (grid handling)
+
+Folder Structure:
+Pathfinding/
+├── algorithms/     # A* pathfinding logic
+├── data/           # BC map grid configuration
+├── models/         # Grid system implementation
+├── services/       # Core pathfinding service
+├── api.py         # Ready-to-run API server
+└── requirements.txt
+
+Quick Start:
+1. Install Python 3.9+ (if not installed)
+2. Install dependencies:
+   > pip install -r requirements.txt
+3. Run the API server:
+   > python api.py
+4. API will run at: http://localhost:5000
+
+API Endpoint:
+POST http://localhost:5000/detect-fire
+
+Sample Request (JSON):
+{
+  "latitude": 53.7267,
+  "longitude": -127.6476
+}
+
+Sample Response:
+{
+  "fire": [45, 67],
+  "hospital": [52, 71],
+  "path": [[46,67], [47,68], ...],
+  "grid_state": [[0,1,0,...], [...]] 
+}
+
+Grid Legend:
+0 = Traversable land
+1 = Obstacle (mountain/water)
+2 = Hospital
+3 = Fire detection
+
+Frontend Integration:
+Use fetch() in JavaScript:
+
+fetch('http://localhost:5000/detect-fire', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    latitude: 51.0,
+    longitude: -120.5
+  })
+})
+
+Testing Tools:
+1. Test with curl:
+   curl -X POST http://localhost:5000/detect-fire -H "Content-Type: application/json" -d '{"latitude":51.0,"longitude":-120.5}'
+
+2. Or use Postman (GUI tool)
+
