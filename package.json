@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cd client && npm install && npm run build",
     "start": "cd server && npm install && npm run start",
-    "clean": "rimraf node_modules client/node_modules server/node_modules client/dist"
+    "clean": "npm install rimraf && rimraf node_modules client/node_modules server/node_modules client/dist"
   },
   "keywords": [],
   "author": "",
