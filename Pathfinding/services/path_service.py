@@ -9,10 +9,10 @@ class PathService:
         self.grid = BCGrid()
 
     
-    def process_detection(self, lat, lon):
+    def process_detection(self, lat, lon, hospital_data, grid_data):
         """Main processing pipeline"""
 
-        if not self.grid.load():
+        if not self.grid.load(hospital_data, grid_data):
             return {"error": "Grid is not properly loaded, data is missing."}
 
         x, y = self._latlon_to_grid(lat, lon)
