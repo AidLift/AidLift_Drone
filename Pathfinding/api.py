@@ -18,7 +18,6 @@ from flask_cors import CORS
 from services.path_service import PathService
 
 
-path_service = PathService()
 
 
 app = Flask(__name__)
@@ -43,14 +42,37 @@ class FireDetector:
         self.model.load_state_dict(torch.load("models/best_model.pth", map_location=self.device))
         self.model.eval()
 
+    # def predict(self, image):
+    #     img_tensor = transform(image).unsqueeze(0).to(self.device)
+    #     with torch.no_grad():
+    #         output = self.model(img_tensor)
+    #         probs = torch.softmax(output, dim=1)
+    #         fire_prob = probs[0][1].item()
+    #     return fire_prob > 0.5, fire_prob
+
+
     def predict(self, image):
         img_tensor = transform(image).unsqueeze(0).to(self.device)
+        print(f"🧪 Tensor stats — min: {img_tensor.min().item():.4f}, max: {img_tensor.max().item():.4f}, mean: {img_tensor.mean().item():.4f}")
         with torch.no_grad():
             output = self.model(img_tensor)
             probs = torch.softmax(output, dim=1)
-            fire_prob = probs[0][1].item()  # Index 1 = "fire" class (adjust if needed)
-        return fire_prob > 0.5, fire_prob
 
+            # Log the full probability distribution
+            print("🔥 Class Probabilities:", probs.cpu().numpy())
+
+            # fire_prob = probs[0][1].item()
+            # not_fire_prob = probs[0][0].item()
+
+            fire_prob = probs[0][0].item()  # ✅ Index 0 = fire class
+            not_fire_prob = probs[0][1].item()
+            # Log individual class confidence
+            print(f"🔥 Fire Probability: {fire_prob:.4f}")
+            print(f"❄️ Not-Fire Probability: {not_fire_prob:.4f}")
+
+        # You can change this threshold if needed (e.g., fire_prob > 0.8)
+        return fire_prob > 0.5, fire_prob
+    
 # Image transforms
 transform = transforms.Compose([
     transforms.Resize((256, 256)),
@@ -67,6 +89,7 @@ def allowed_file(filename):
 
 def process_image(image_path):
     """Analyze single image for fire"""
+    # img = Image.open(image_path).convert("RGB")
     img = Image.open(image_path)
     is_fire, confidence = model.predict(img)
     return is_fire, confidence
@@ -94,9 +117,11 @@ def process_video(video_path):
     confidence = fire_frames / max(1, (total_frames // 10))
     return fire_frames > 0, confidence
 
-def generate_escape_path(lat, lon):
+def generate_escape_path(lat, lon, hospital_data, grid_data):
     """Mock pathfinding - replace with your A* implementation"""
-    pathserv = path_service.process_detection(lat, lon)
+    path_service = PathService()
+
+    pathserv = path_service.process_detection(lat, lon, hospital_data, grid_data)
     return {
         "fire": [int(lat*100)%90, int(lon*100)%90],  # Mock grid coords
         "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
@@ -119,7 +144,10 @@ def generate_escape_path(lat, lon):
 def detect_fire():
     try:
         # Handle media upload
+        print(1)
         if 'media' in request.files:
+            print(2)
+
             file = request.files['media']
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
@@ -128,9 +156,21 @@ def detect_fire():
                 
                 # Process media
                 if file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    is_fire, confidence = process_image(filepath)
+                    print(3)
+                    
+                    # is_fire, confidence = process_image(filepath)
+                    try:
+                        print(4)
+                        is_fire, confidence = process_image(filepath)
+                        print("is_fire:", is_fire)
+                    except Exception as e:
+                        print("🔥 Error inside process_image:", str(e))
+
                 else:
                     is_fire, confidence = process_video(filepath)
+                    print("is_fire:", is_fire)
+
+
                 
                 # Clean up
                 os.remove(filepath)
@@ -147,9 +187,29 @@ def detect_fire():
                    request.json.get('latitude'))
         lon = float(request.form.get('longitude') or 
                    request.json.get('longitude'))
+
+
+        # lat = float(request.form.get('latitude'))
+        # lon = float(request.form.get('longitude'))
+        print(lat,'lat')
+        print(lon,'long')
+        
+        # hospital_data = request.json.get('hospitalData')
+        # grid_data = request.json.get('gridData')
+        # hospital_data = request.form.get('hospitalData') or request.json.get('hospitalData')
+        # grid_data = request.form.get('gridData') or request.json.get('gridData')
+        
+        # hospital_data = json.loads(request.form.get('hospitalData')) or request.json.get('hospitalData')
+        # grid_data = json.loads(request.form.get('gridData')) or request.json.get('gridData')
+        
+        try:
+            hospital_data = json.loads(request.form.get('hospitalData')) if request.form.get('hospitalData') else request.json.get('hospitalData')
+            grid_data = json.loads(request.form.get('gridData')) if request.form.get('gridData') else request.json.get('gridData')
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON data for hospitalData or gridData"}), 400
         
         # Generate emergency response
-        path_data = generate_escape_path(lat, lon)
+        path_data = generate_escape_path(lat, lon, hospital_data, grid_data)
         print(path_data["hospital_index"], ' hospindex')
 
         response = {
@@ -215,7 +275,6 @@ def save_grid_info():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 
 
 if __name__ == '__main__':

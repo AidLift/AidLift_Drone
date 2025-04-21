@@ -9,16 +9,29 @@ class BCGrid:
         self.grid = None
        
 
-    def load(self):
+    def load(self, hospital_data, grid_data):
         """Method to load the config, hospitals, and obstacles and initialize the grid"""        
-        config_path = self.data_dir / "grid.config.json"
-        hospitals_path = self.data_dir / "hospitals.json"
-        obstacles_path = self.data_dir / "obstacles.json"
+        # config_path = self.data_dir / "grid.config.json"
+        # hospitals_path = self.data_dir / "hospitals.json"
+        # obstacles_path = self.data_dir / "obstacles.json"
+
+        print(hospital_data, 'hospital data')
+        print(grid_data, 'grid data')
+        print('WE IN DA LOAD HERE')
+
         
         # Load all necessary data
-        self.load_config(self._load_json(config_path))
-        self.load_hospitals(self._load_json(hospitals_path))
-        self.load_obstacles(self._load_json(obstacles_path))
+        self.load_config(grid_data) 
+        self.load_hospitals(hospital_data)
+        # Use temp data for now
+        obstacles = [
+            [50,50], [150,150], [250,250], [350,350], [450,450]
+        ]
+        self.load_obstacles(obstacles)
+        
+        # self.load_config(self._load_json(config_path))
+        # self.load_hospitals(self._load_json(hospitals_path))
+        # self.load_obstacles(self._load_json(obstacles_path))
         
         # Initialize the grid after loading all data
         self._initialize_grid()
@@ -70,30 +83,50 @@ class BCGrid:
 
     def load_config(self, config):
         """Load grid configuration from the passed dictionary"""
+        print(1)
+        print(config)
+
+
         self.width = config["dimensions"]["width"]
         self.height = config["dimensions"]["height"]
         self.bounds = config["bounds"]
+
+        print('LOADED')
     
 
     def _validate_coordinates(self, x, y):
         """Validate if the given (x, y) coordinates are within grid bounds"""
         return 0 <= x < self.width and 0 <= y < self.height
 
+    # def load_hospitals(self, hospitals):
+    #     """Load hospitals from the passed list"""
+    #     self.hospitals = []
+    #     for hosp in hospitals:
+    #         name = hosp['name']
+    #         lat = hosp['lat']
+    #         lon = hosp['lon']
+            
+    #         x, y = self.geo_to_grid(float(lat), float(lon))
+    #         if self._validate_coordinates(x, y):
+    #             self.hospitals.append((x, y))
+    #         else:
+    #             print(f"Skipping hospital {name} at ({lat}, {lon}) - out of bounds")
+
     def load_hospitals(self, hospitals):
         """Load hospitals from the passed list"""
-        # self.hospitals = [tuple(h) for h in hospitals]
         self.hospitals = []
         for hosp in hospitals:
             name = hosp['name']
             lat = hosp['lat']
             lon = hosp['lon']
             
+            # Convert lat, lon to grid coordinates
             x, y = self.geo_to_grid(float(lat), float(lon))
+            
             if self._validate_coordinates(x, y):
                 self.hospitals.append((x, y))
             else:
                 print(f"Skipping hospital {name} at ({lat}, {lon}) - out of bounds")
-
 
         
     
