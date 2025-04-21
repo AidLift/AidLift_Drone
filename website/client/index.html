@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
+    <head>     
+        <!-- <script src="script.js"></script> -->
+            
         <title>AidLift</title>
 
         <script type="module" src="src/script.js" defer></script>
 
-
         <link rel="stylesheet" href="src/index.css">
-
 
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,74 +25,104 @@
         <script src="src/leaflet/leaflet.js" defer></script> -->
     </head>
     <body>
-        <header>
-            <h1>Aidlift Service</h1>
-        </header>
-        <div class="container">
-            <div class="main-container">
-                <main>
-                    <h2>Welcome!</h2>
-                    <p>If you need further assistance please click on the button
-                            below..</p>
-                    <button id="assistance">Click for assistance</button>
-                    <button disabled>Test</button>
-
-
-                    <p id="location">Location will be displayed here...</p>
+        <!-- Landing Screen -->
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <h1 class="fade-in">AIDLIFT</h1>
+                <p class="fade-in delay">
+                    AI-powered disaster detection. Real-time fire response simulation.
+                </p>
+                <div class="scroll-down" id="scroll-down">&#8595;</div>
+            </div>
+        </section>
         
-                    <h1 class="centered-heading">Simulating Drone Arrival</h1>
-        
-                    <div id="map">
-                        <div class="loading-container">
-                            <img id='drone-logo' src="/images/drone.gif" alt="Loading... PLEASE WAIT HOLY SHIT" class="loading-gif" />
+        <section class="main-site" id="main-site">
+            <header>
+                <h1>Aidlift Service</h1>
+            </header>
+            <div class="container">
+                <div class="main-container">
+                    <main>
+                        <h2>Welcome!</h2>
+                        <p>If you need further assistance please click on the button
+                                below..</p>
+
+    
+                        <div id="images">
+                            <form id="uploadForm" enctype="multipart/form-data">
+                                <input 
+                                  type="file" 
+                                  id="mediaInput" 
+                                  accept="image/*,video/*" 
+                                  required
+                                />
+
+                                <button type="submit">Upload Media</button>
+                            </form>
+
                         </div>
-                    </div>
-                    
-                    <!-- <div id="map-container">
-                        <div id="drone"></div>
-                    </div> -->
-                </main>
-            </div>
+                        <button id="assistance">Click for assistance</button>
 
-            <div class="ai-container">
-                <div id="ai-support">
-                    <h2>AI CHAT SUPPORT</h2>
-                    <div id="conversation">
-                        <p id="response">Hello, how may I assist you?</p>
+
+                        <p id="location">Location will be displayed here...</p>
+            
+                        <h1 class="centered-heading">Simulating Drone Arrival</h1>
+            
                         
-                    </div>
-        
-                    <input type="text" id="aiInput" placeholder="Ask something..." />
-                    <!-- <button id="ai">AI Test</button> -->
-                     
+                        <div class="map-wrapper pulse">
+                            <div id="map">
+                                <div class="loading-container">
+                                    <img id='drone-logo' src="/images/drone.gif" alt="Loading... PLEASE WAIT HOLY SHIT" class="loading-gif" />
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <!-- <div id="map-container">
+                            <div id="drone"></div>
+                        </div> -->
+                    </main>
                 </div>
+    
+                <div class="ai-container">
+                    <div id="ai-support">
+                      <h2>AI CHAT SUPPORT</h2>
+                  
+                    
+                      <div id="conversation-wrapper">
+                        <div id="conversation">
+                          <p id="response">Hello, how may I assist you?</p>
+                         
+                        </div>
+                      </div>
+                  
+                      
+                      <input type="text" id="aiInput" placeholder="Ask something..." />
+                    </div>
+                  </div>
+                  
+
+
+
+                <div id="live-video">
+                                    
+                    <video id="videoElement" width="640" height="480" autoplay></video>
+                    <button id="startCameraButton" disabled>Start Camera</button>
+                    <button id="stopCameraButton" disabled>Stop Camera</button>
+            
+                </div>
+        
+                <footer>
+                    <p>© 2025 AidLift</p>
+                </footer>
             </div>
-    
-    
-            <footer>
-                <p>© 2025 AidLift</p>
-            </footer>
-        </div>
+        </section>
+        
         
     </body>
 
-    <div id="images">
-        <form id="uploadForm" enctype="multipart/form-data">
-            <input 
-              type="file" 
-              id="mediaInput" 
-              accept="image/*,video/*" 
-              required
-            />
-            <button type="submit">Upload Media</button>
-        </form>
-    
-    
-        <video id="videoElement" width="640" height="480" autoplay></video>
-        <button id="startCameraButton" disabled>Start Camera</button>
-        <button id="stopCameraButton" disabled>Stop Camera</button>
 
-    </div>
 
+
+    
       
 </html>
