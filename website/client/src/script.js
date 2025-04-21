@@ -39,7 +39,7 @@ function gridToLatLon(coords, gridData) {
  * @param {number} longitude - The longitude of the current location.
  * @returns {Promise<Object|null>} A promise that resolves to the response data containing the path to the nearest hospital or `null` if an error occurred.
  */
-async function detectFireAndGetHospitalPath(latitude, longitude, mediaFile){
+async function detectFireAndGetHospitalPath(latitude, longitude, sateliteResponse, mediaFile){
     try { 
 
         // Fix up this logic
@@ -50,6 +50,8 @@ async function detectFireAndGetHospitalPath(latitude, longitude, mediaFile){
             formData.append("latitude", latitude);
             formData.append("longitude", longitude);
             formData.append("media", mediaFile);
+            formData.append("hospitalData", JSON.stringify(sateliteResponse.hospitals));
+            formData.append("gridData", JSON.stringify(sateliteResponse.gridData));  
     
             res = await fetch('http://192.168.2.135:5000/detect-fire', {
                 method: 'POST',
@@ -65,6 +67,8 @@ async function detectFireAndGetHospitalPath(latitude, longitude, mediaFile){
                 body: JSON.stringify({
                     latitude: latitude,
                     longitude: longitude,
+                    hospitalData: sateliteResponse.hospitals,
+                    gridData: sateliteResponse.grid  
                 })
             });
 
@@ -104,7 +108,7 @@ async function detectFireAndGetHospitalPath(latitude, longitude, mediaFile){
  * @param {number} longitude - The longitude of the current fire location.
  */
 async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile){
-    const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude, mediaFile);
+    const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude, sateliteResponse, mediaFile);
 
     // console.log('GRID DATA', gridData);
     console.log(hospitalPath);
@@ -773,7 +777,9 @@ async function simualteSatelite(latitude, longitude){
     // const gridData = await writeDataToJson(hospitals, bounds, dimensions);
 
     // Hospital and Grid bounds are written to json file, (might move to satelite)
-    await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
+
+    // Need to pass these values directly since I'm not using a database
+    // await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
 
     console.log('Files saved to json')
     console.log('✅ Hospitals saved');
