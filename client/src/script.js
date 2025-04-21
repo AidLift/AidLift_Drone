@@ -53,13 +53,13 @@ async function detectFireAndGetHospitalPath(latitude, longitude, sateliteRespons
             formData.append("hospitalData", JSON.stringify(sateliteResponse.hospitals));
             formData.append("gridData", JSON.stringify(sateliteResponse.gridData));  
     
-            res = await fetch('http://192.168.2.135:5000/detect-fire', {
+            res = await fetch('https://aidlift-drone-backend.onrender.com/detect-fire', {
                 method: 'POST',
                 body: formData,
             });
         }else{
             console.log('HELLO')
-            res = await fetch('http://192.168.2.135:5000/detect-fire', {
+            res = await fetch('https://aidlift-drone-backend.onrender.com/detect-fire', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
