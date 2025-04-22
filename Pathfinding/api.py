@@ -18,15 +18,13 @@ from flask_cors import CORS
 from services.path_service import PathService
 
 
-
-
 app = Flask(__name__)
 
 CORS(app)
 
 # Configuration
 UPLOAD_FOLDER = 'tmp_uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4', 'mov'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -39,7 +37,11 @@ class FireDetector:
         self.model = ConvNet(num_classes=2).to(self.device)
         
         # Load trained weights
-        self.model.load_state_dict(torch.load("models/best_model.pth", map_location=self.device))
+        # state_dict = torch.load("models/best_model_extended.pth", map_location=self.device)
+        # self.model.load_state_dict(state_dict, strict=False)
+
+        self.model.load_state_dict(torch.load("models/best_model_extended.pth", map_location=self.device))
+        # self.model.load_state_dict(torch.load("models/best_model.pth", map_location=self.device))
         self.model.eval()
 
     # def predict(self, image):
@@ -64,7 +66,7 @@ class FireDetector:
             # fire_prob = probs[0][1].item()
             # not_fire_prob = probs[0][0].item()
 
-            fire_prob = probs[0][0].item()  # ✅ Index 0 = fire class
+            fire_prob = probs[0][0].item() 
             not_fire_prob = probs[0][1].item()
             # Log individual class confidence
             print(f"🔥 Fire Probability: {fire_prob:.4f}")
@@ -123,7 +125,7 @@ def generate_escape_path(lat, lon, hospital_data, grid_data):
 
     pathserv = path_service.process_detection(lat, lon, hospital_data, grid_data)
     return {
-        "fire": [int(lat*100)%90, int(lon*100)%90],  # Mock grid coords
+        "fire": [int(lat*100)%90, int(lon*100)%90], 
         "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
         "path": pathserv["path"],
         "hospital_index": pathserv["hospital_index"],
@@ -167,6 +169,7 @@ def detect_fire():
                         print("🔥 Error inside process_image:", str(e))
 
                 else:
+                    print('In VIDEO')
                     is_fire, confidence = process_video(filepath)
                     print("is_fire:", is_fire)
 
@@ -191,8 +194,7 @@ def detect_fire():
 
         # lat = float(request.form.get('latitude'))
         # lon = float(request.form.get('longitude'))
-        print(lat,'lat')
-        print(lon,'long')
+    
         
         # hospital_data = request.json.get('hospitalData')
         # grid_data = request.json.get('gridData')

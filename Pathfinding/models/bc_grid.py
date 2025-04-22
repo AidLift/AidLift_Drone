@@ -15,9 +15,9 @@ class BCGrid:
         # hospitals_path = self.data_dir / "hospitals.json"
         # obstacles_path = self.data_dir / "obstacles.json"
 
-        print(hospital_data, 'hospital data')
-        print(grid_data, 'grid data')
-        print('WE IN DA LOAD HERE')
+        # print(hospital_data, 'hospital data')
+        # print(grid_data, 'grid data')
+        # print('WE IN DA LOAD HERE')
 
         
         # Load all necessary data
@@ -83,16 +83,10 @@ class BCGrid:
 
     def load_config(self, config):
         """Load grid configuration from the passed dictionary"""
-        print(1)
-        print(config)
-
-
         self.width = config["dimensions"]["width"]
         self.height = config["dimensions"]["height"]
         self.bounds = config["bounds"]
 
-        print('LOADED')
-    
 
     def _validate_coordinates(self, x, y):
         """Validate if the given (x, y) coordinates are within grid bounds"""
