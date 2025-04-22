@@ -48,7 +48,7 @@ class FireDetector:
         with torch.no_grad():
             output = self.model(img_tensor)
             probs = torch.softmax(output, dim=1)
-            fire_prob = probs[0][1].item()  # Index 1 = "fire" class (adjust if needed)
+            fire_prob = probs[0][0].item()  # Index 1 = "fire" class (adjust if needed)
         return fire_prob > 0.5, fire_prob
 
 # Image transforms
