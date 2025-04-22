@@ -9,7 +9,7 @@ if not os.path.exists(models_folder):
     os.makedirs(models_folder)
 
 # Google Drive file ID (get it from the shareable link)
-file_id = '1XrvOBVW-39XWLYGsJGZpTZ67SgAxSddw'
+file_id = '1kI0P8QFgpY6GJsSKKoA1V6wPcpC0Vi_t'  # Updated file ID
 url = f'https://drive.google.com/uc?export=download&id={file_id}'
 
 # Define the file path where the model will be saved
