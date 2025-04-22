@@ -27,6 +27,10 @@ transform = transforms.Compose([
 ])
 
 train_data = datasets.ImageFolder(root='dataset/train', transform=transform)
+
+print(train_data.classes)
+print(len(train_data))
+
 val_data = datasets.ImageFolder(root='dataset/val', transform=transform)
 
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
@@ -99,3 +103,22 @@ for epoch in range(num_epochs):
         progress_bar.set_postfix(loss=f"{loss.item():.4f}")
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] Completed. Avg Loss: {running_loss / len(train_loader):.4f}")
+
+    model.eval()
+correct = 0
+total = 0
+
+with torch.no_grad():
+    for images, labels in val_loader:
+        images, labels = images.to(device), labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+accuracy = 100 * correct / total
+print(f"Validation Accuracy: {accuracy:.2f}%")
+model.train()
+
+torch.save(model.state_dict(), "best_model_extended.pth")
+
