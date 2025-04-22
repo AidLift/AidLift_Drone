@@ -1,5 +1,8 @@
 import sys
 import os
+import osmnx as ox
+from flask import Flask, request, jsonify
+from Pathfinding.Pathfinder import get_nearest_nodes, run_astar, path_to_coordinates
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -16,6 +19,8 @@ import json
 from pathlib import Path
 from flask_cors import CORS
 from services.path_service import PathService
+import requests
+
 
 
 path_service = PathService()
@@ -252,4 +257,29 @@ def sync_hospitals():
         return jsonify({"error": str(e)}), 500
 
     
+@app.route('/api/get-path', methods=['POST'])
+def get_path():
+    try:
+        data = request.get_json()
+        start_coords = tuple(data['start'])  # [lat, lon]
+        end_coords = tuple(data['end'])      # [lat, lon]
+
+        # Load the street graph (you can optimize later by caching)
+        G = ox.graph_from_place("Montréal, Quebec, Canada", network_type="drive")
+
+        # Get nearest nodes
+        start_node, end_node = get_nearest_nodes(G, start_coords, end_coords)
+
+        # Run A*
+        path = run_astar(G, start_node, end_node)
+
+        if not path:
+            return jsonify({'error': 'No path found'}), 404
+
+        route_coords = path_to_coordinates(G, path)
+
+        return jsonify({'route': route_coords})
+
+    except Exception as e:
+        return jsonify
     
