@@ -80,22 +80,28 @@ body {
 
   .ai-container {
     display: flex;
-    flex-direction: row;
-    justify-content: right;
-    align-items: right;
-    max-width: 600px;
-    margin: 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 70%;
+    max-width: 900px;
+    margin: 40px auto 0 auto;
     background-color: #000000;
     overflow: hidden;
-    padding: 16px;
-
+    padding: 18px;
+    position: relative;
+    z-index: 2;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(198, 180, 189, 0.4);
   }
   
   #ai-support {
     display: flex;
     flex-direction: column;
     height: 500px; /* fixed height for the full chat box */
+    width: 100%;
   }
+
   
   #conversation-wrapper {
     flex: 1;
@@ -106,10 +112,12 @@ body {
     color: #000;
     border-radius: 8px;
     border: 1px solid #000000;
+    text-align: center;
   }
   
   #conversation p {
     margin: 0 0 10px;
+    text-align: center;
   }
   
   #aiInput {
@@ -204,6 +212,11 @@ body {
     animation-delay: 1.4s;
   }
   
+
+  .fade-in.delay2 {
+    animation-delay: 3s;
+  }
+
   .scroll-down {
     font-size: 2rem;
     margin-top: 40px;
@@ -223,4 +236,8 @@ body {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(10px); }
   }
+
+
+
+  
 

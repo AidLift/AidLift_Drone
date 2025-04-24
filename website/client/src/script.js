@@ -972,7 +972,63 @@ function accessCamera(){
 }
 
 
-  
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const slides = document.querySelectorAll('.slides-wrapper .slide');
+  const nextBtn = document.getElementById('next-slide');
+  const prevBtn = document.getElementById('prev-slide');
+  const emergencyBtn = document.getElementById('emergency-button');
+  const mainSite = document.getElementById('main-site');
+
+  let currentSlide = 0;
+
+  function showSlide(index) {
+    slides.forEach((slide, i) => {
+      slide.classList.remove('active');
+      if (i === index) slide.classList.add('active');
+    });
+  }
+
+  nextBtn.addEventListener('click', () => {
+    currentSlide = (currentSlide + 1) % slides.length;
+    showSlide(currentSlide);
+  });
+
+  prevBtn.addEventListener('click', () => {
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    showSlide(currentSlide);
+  });
+
+  emergencyBtn.addEventListener('click', () => {
+    mainSite.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  let startX = 0;
+  let endX = 0;
+
+  const swipeArea = document.getElementById('slides-wrapper');
+  swipeArea.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+  });
+
+  swipeArea.addEventListener('touchend', (e) => {
+    endX = e.changedTouches[0].clientX;
+    handleSwipe();
+  });
+
+  function handleSwipe() {
+    if (startX - endX > 50) {
+      nextBtn.click();
+    } else if (endX - startX > 50) {
+      prevBtn.click();
+    }
+  }
+
+  // Initialize first slide
+  showSlide(currentSlide);
+});
+
 
 /// --- TODO
 /**
