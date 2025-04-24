@@ -198,3 +198,216 @@ if(closestFire.latitude && closestFire.longitude){
 //       "height": 500
 //     }
 //   }
+
+
+
+async function fetchHospitals() {
+    try {
+      const response = await fetch('http://192.168.2.135:5000/get-hospitals');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      console.log("Hospitals:", data.hospitals);
+      
+      // You can now use data.hospitals to do stuff in your UI
+      return data.hospitals;
+  
+    } catch (error) {
+      console.error("Failed to fetch hospitals:", error);
+    }
+  }
+
+
+  
+
+// function getImageOrVideo(event){
+//     event.preventDefault();
+//     console.log('SENT')
+
+//     const mediaInput = document.getElementById('mediaInput');
+//     const file = mediaInput.files[0];
+
+//     if (file) {
+//         console.log("Selected file:", file);
+//         console.log("File type:", file.type);
+  
+//         const formData = new FormData();
+//         formData.append("media", file);
+  
+//         fetch('/api/upload-media', {
+//           method: 'POST',
+//           body: formData
+//         })
+//         .then(response => response.text())
+//         .then(result => {
+//           console.log("Upload success:", result);
+//         })
+//         .catch(error => {
+//           console.error("Upload error:", error);
+//         });
+//       }
+// }
+
+
+
+    // -- Random bounds
+    // const bounds = {
+    //     min_lat: -61.83,
+    //     max_lat: 61.17,
+    //     min_lon: -126.32,
+    //     max_lon: 170.41
+    // };
+    
+    // const dimensions = {
+    //     width: 580,
+    //     height: 270
+    // };
+
+    // -- Rome bounds
+    // const bounds = {
+    //     min_lat: 41.8,
+    //     max_lat: 42.1,
+    //     min_lon: 12.4,
+    //     max_lon: 12.6
+    // };
+
+    // const dimensions = {
+    //     width: 500,
+    //     height: 500
+    // };
+
+
+        // const gridData = {
+    //     "bounds": {
+    //         "min_lat": 45.4,
+    //         "max_lat": 45.7,
+    //         "min_lon": -73.7,
+    //         "max_lon": -73.4
+    //     },
+    //     "dimensions": {
+    //         "width": 500,
+    //         "height": 500
+    //     }
+
+    // }
+
+
+
+    async function writeDataToJson(hospitals, bounds, dimensions) {
+        // Retrieve the stored data from localStorage
+        const previousHospitals = JSON.parse(localStorage.getItem('hospitals'));
+        const previousBounds = JSON.parse(localStorage.getItem('bounds'));
+        const previousDimensions = JSON.parse(localStorage.getItem('dimensions'));
+    
+        // Check if the data has changed by comparing the objects directly
+        const hospitalsChanged = JSON.stringify(hospitals) !== JSON.stringify(previousHospitals);
+        const boundsChanged = JSON.stringify(bounds) !== JSON.stringify(previousBounds);
+        const dimensionsChanged = JSON.stringify(dimensions) !== JSON.stringify(previousDimensions);
+        
+    
+        // Handle hospital changes
+        if (hospitalsChanged) {
+            try {
+                
+                await fetch('http://192.168.2.135:5000/save-hospitals', {
+                // await fetch('http://192.168.2.135:5000/save-hospitals', {
+    
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hospitals: hospitals
+                    })
+                });
+            } catch (err) {
+                console.error('❌ Failed to save hospitals:', err);
+            }
+        }
+    
+        // Handle bounds and dimensions changes
+        if (boundsChanged || dimensionsChanged) {
+            try {
+                await fetch('http://192.168.2.135:5000/save-grid-info', {
+                // await fetch('http://192.168.2.135:5000/save-grid-info', {
+    
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bounds, dimensions })
+                }).then(res => res.json());
+            } catch (err) {
+                console.error('❌ Failed to save grid info:', err);
+            }
+        }
+    
+        // Update localStorage if any data has changed
+        if (hospitalsChanged) {
+            localStorage.setItem('hospitals', JSON.stringify(hospitals));
+        }
+        if (boundsChanged) {
+            localStorage.setItem('bounds', JSON.stringify(bounds));
+        }
+        if (dimensionsChanged) {
+            localStorage.setItem('dimensions', JSON.stringify(dimensions));
+        }
+    
+        // Return success after all operations are completed
+        return { success: true };
+    }
+
+    // await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
+
+
+    // let closestDistance = Infinity
+    // let closestFire = null
+
+
+
+    async function testOutNewPath(latitude, longitude, hospitalPath, sateliteResponse){
+
+        // If its undefined check out the add error handling
+        const convertHospiCoords = gridToLatLon(hospitalPath.nearest_hospital.grid, 
+            sateliteResponse.gridData)
+    
+        
+        const condasfsa = gridToLatLon([228, 269], 
+            sateliteResponse.gridData)
+        console.log('dddasa', condasfsa)
+    
+        try {
+            const response = await fetch('http://192.168.2.135:5001/api/get-path', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                start: [latitude, longitude],
+                end: convertHospiCoords
+            })
+            });
+        
+            // Check if the response is OK (status 200-299)
+            if (response.ok) {
+                const data = await response.json(); 
+                // console.log('Response: PATHHTHS', data);
+                return data;
+            } else {
+                console.error('Server error:', response.status, await response.text());
+            }
+        } catch (error) {
+            console.error('Request failed', error);
+        }
+    }
+
+
+    // First function
+function gridToLatLon(coords, gridData) {
+    const { min_lat, max_lat, min_lon, max_lon } = gridData.bounds;
+    const { width, height } = gridData.dimensions;
+  
+    const lat = max_lat - (coords[1] / height) * (max_lat - min_lat);
+    const lon = min_lon + (coords[0] / width) * (max_lon - min_lon);
+  
+    return [lat, lon];
+}

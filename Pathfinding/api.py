@@ -16,6 +16,8 @@ import json
 from pathlib import Path
 from flask_cors import CORS
 from services.path_service import PathService
+from Pathfinding.Pathfinder import get_nearest_nodes, run_astar, path_to_coordinates
+import osmnx as ox
 
 
 app = Flask(__name__)
@@ -63,11 +65,9 @@ class FireDetector:
             # Log the full probability distribution
             print("🔥 Class Probabilities:", probs.cpu().numpy())
 
-            # fire_prob = probs[0][1].item()
-            # not_fire_prob = probs[0][0].item()
+            fire_prob = probs[0][1].item() 
+            not_fire_prob = probs[0][0].item()
 
-            fire_prob = probs[0][0].item() 
-            not_fire_prob = probs[0][1].item()
             # Log individual class confidence
             print(f"🔥 Fire Probability: {fire_prob:.4f}")
             print(f"❄️ Not-Fire Probability: {not_fire_prob:.4f}")
@@ -126,21 +126,52 @@ def generate_escape_path(lat, lon, hospital_data, grid_data):
     pathserv = path_service.process_detection(lat, lon, hospital_data, grid_data)
     return {
         "fire": [int(lat*100)%90, int(lon*100)%90], 
-        "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
+        "hospital": pathserv["path"][-1],
         "path": pathserv["path"],
         "hospital_index": pathserv["hospital_index"],
         "distance_km": round(abs(lat - lon) * 110, 2),
     }
-    return {
-        "fire": [int(lat*100)%90, int(lon*100)%90],  # Mock grid coords
-        "hospital": [int(lat*100)%90 + 7, int(lon*100)%90 + 4],
-        "path": [
-            [int(lat*100)%90 + i, int(lon*100)%90 + i] 
-            for i in range(1, 6)
-        ],
-        "distance_km": round(abs(lat - lon) * 110, 2)
-    }
 
+
+def grid_to_latlon(coords, grid_data):
+    min_lat = grid_data['bounds']['min_lat']
+    max_lat = grid_data['bounds']['max_lat']
+    min_lon = grid_data['bounds']['min_lon']
+    max_lon = grid_data['bounds']['max_lon']
+    
+    width = grid_data['dimensions']['width']
+    height = grid_data['dimensions']['height']
+
+    x, y = coords
+    lat = max_lat - (y / height) * (max_lat - min_lat)
+    lon = min_lon + (x / width) * (max_lon - min_lon)
+
+    return (lat, lon)
+
+# G = ox.graph_from_place("Montréal, Quebec, Canada", network_type="drive")
+G = ox.graph_from_place("Montréal, Quebec, Canada", network_type="drive", retain_all=True, simplify=True)
+G = ox.project_graph(G, to_crs='epsg:4326')
+# ox.save_graphml(G, "montreal_street_graph.graphml")
+
+def get_road_route(start_coords, end_coords):
+    try:
+        start_coords = tuple(start_coords)
+        end_coords = tuple(end_coords)
+
+        start_node, end_node = get_nearest_nodes(G, start_coords, end_coords)
+        print("Start node:", start_node)
+        print("End node:", end_node)
+
+        path = run_astar(G, start_node, end_node)
+
+        if not path:
+            return None
+
+        return path_to_coordinates(G, path)
+
+    except Exception as e:
+        print("Route error:", e)
+        return None
 
 @app.route('/detect-fire', methods=['POST'])
 def detect_fire():
@@ -172,8 +203,6 @@ def detect_fire():
                     print('In VIDEO')
                     is_fire, confidence = process_video(filepath)
                     print("is_fire:", is_fire)
-
-
                 
                 # Clean up
                 os.remove(filepath)
@@ -212,7 +241,10 @@ def detect_fire():
         
         # Generate emergency response
         path_data = generate_escape_path(lat, lon, hospital_data, grid_data)
-        print(path_data["hospital_index"], ' hospindex')
+
+        # Get the road route for the nearest hospital
+        nearest_hospital_latlon = grid_to_latlon(path_data["hospital"], grid_data)
+        road_route = get_road_route([lat, lon], nearest_hospital_latlon)
 
         response = {
             "status": "success",
@@ -224,6 +256,7 @@ def detect_fire():
                 "distance": f"{path_data['distance_km']} km"
             },
             "escape_route": path_data["path"],
+            "road_route": road_route,
             "confidence": f"{confidence if 'confidence' in locals() else 95:.0%}",
             "hospital_index" : path_data["hospital_index"]
         }
@@ -233,86 +266,116 @@ def detect_fire():
         return jsonify({"error": str(e)}), 500
     
 
-
-
-@app.route('/save-hospitals', methods=['POST'])
-def save_hospitals():
-    # Get the JSON data from the request
-    try:
-        hospitals_data = request.get_json()['hospitals']
-        save_path = Path("data/bc_grid")
-        save_path.mkdir(parents=True, exist_ok=True) 
+# @app.route('/save-hospitals', methods=['POST'])
+# def save_hospitals():
+#     # Get the JSON data from the request
+#     try:
+#         hospitals_data = request.get_json()['hospitals']
+#         save_path = Path("data/bc_grid")
+#         save_path.mkdir(parents=True, exist_ok=True) 
  
-        # Write to hospitals.json file
-        with open(save_path / 'hospitals.json', 'w') as f:
-            json.dump(hospitals_data, f, indent=4)
+#         # Write to hospitals.json file
+#         with open(save_path / 'hospitals.json', 'w') as f:
+#             json.dump(hospitals_data, f, indent=4)
  
-        return jsonify({"message": "Hospitals data saved successfully!"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#         return jsonify({"message": "Hospitals data saved successfully!"}), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/save-grid-info', methods=['POST'])
-def save_grid_info():
-    try:
-        grid_data = request.get_json()
+# @app.route('/save-grid-info', methods=['POST'])
+# def save_grid_info():
+#     try:
+#         grid_data = request.get_json()
         
-        bounds = grid_data['bounds']
-        dimensions = grid_data['dimensions']
+#         bounds = grid_data['bounds']
+#         dimensions = grid_data['dimensions']
 
-        # Define where to save the grid info
-        save_path = Path("data/bc_grid")
-        save_path.mkdir(parents=True, exist_ok=True)
+#         # Define where to save the grid info
+#         save_path = Path("data/bc_grid")
+#         save_path.mkdir(parents=True, exist_ok=True)
         
-        # Write to grid_info.json file
-        with open(save_path / 'grid.config.json', 'w') as f:
-            json.dump(grid_data, f, indent=4)
+#         # Write to grid_info.json file
+#         with open(save_path / 'grid.config.json', 'w') as f:
+#             json.dump(grid_data, f, indent=4)
         
     
-        return jsonify({
-            "message": "Grid info saved successfully!",
-            "bounds": bounds,
-            "dimensions": dimensions
-        }), 200
+#         return jsonify({
+#             "message": "Grid info saved successfully!",
+#             "bounds": bounds,
+#             "dimensions": dimensions
+#         }), 200
     
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
+
+
+
+# @app.route('/api/get-path', methods=['POST'])
+# def get_path():
+#     try:
+#         data = request.get_json()
+#         start_coords = tuple(data['start'])
+#         end_coords = tuple(data['end'])
+
+#         print(start_coords)
+#         print(end_coords)
+#         # Load the street graph (you can optimize later by caching)
+
+#         # Get nearest nodes
+#         start_node, end_node = get_nearest_nodes(G, start_coords, end_coords)
+#         print("Start node:", start_node)
+#         print("End node:", end_node)
+
+#         # Run A*
+#         path = run_astar(G, start_node, end_node)
+
+#         if not path:
+#             return jsonify({'error': 'No path found'}), 404
+
+#         route_coords = path_to_coordinates(G, path)
+
+#         return jsonify({'route': route_coords})
+
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+    
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port)
     # app.run(host='0.0.0.0', port=5000, debug=True)
 
-@app.route('/get-hospitals', methods=['GET'])
-def get_hospitals():
-    try:
-        with open("data/bc_grid/hospitals.json", "r") as f:
-            hospitals = json.load(f)
-        return jsonify({"hospitals": hospitals}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# @app.route('/get-hospitals', methods=['GET'])
+# def get_hospitals():
+#     try:
+#         with open("data/bc_grid/hospitals.json", "r") as f:
+#             hospitals = json.load(f)
+#         return jsonify({"hospitals": hospitals}), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
-@app.route('/sync-hospitals', methods=['GET'])
-def sync_hospitals():
-    try:
-        # 1. Fetch hospital data from Server A
-        response = requests.get("https://aidlift-drone.onrender.com/get-hospitals")
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch from Server A"}), 500
+# @app.route('/sync-hospitals', methods=['GET'])
+# def sync_hospitals():
+#     try:
+#         # 1. Fetch hospital data from Server A
+#         response = requests.get("https://aidlift-drone.onrender.com/get-hospitals")
+#         if response.status_code != 200:
+#             return jsonify({"error": "Failed to fetch from Server A"}), 500
 
-        hospitals_data = response.json()['hospitals']
+#         hospitals_data = response.json()['hospitals']
 
-        # 2. Save to local hospitals.json
-        save_path = Path("data/bc_grid")
-        save_path.mkdir(parents=True, exist_ok=True)
-        with open(save_path / 'hospitals.json', 'w', encoding='utf-8') as f:
-            json.dump(hospitals_data, f, indent=4, ensure_ascii=False)
+#         # 2. Save to local hospitals.json
+#         save_path = Path("data/bc_grid")
+#         save_path.mkdir(parents=True, exist_ok=True)
+#         with open(save_path / 'hospitals.json', 'w', encoding='utf-8') as f:
+#             json.dump(hospitals_data, f, indent=4, ensure_ascii=False)
 
-        return jsonify({"message": " Hospitals synced from Server A"}), 200
+#         return jsonify({"message": " Hospitals synced from Server A"}), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
     
     

@@ -27,6 +27,7 @@
     <body>
         <!-- Landing Screen -->
         <section class="hero" id="hero">
+            <!-- Container for the landing screen -->
             <div class="hero-content">
                 <h1 class="fade-in">AIDLIFT</h1>
                 <p class="fade-in delay">
@@ -41,17 +42,22 @@
                 <h1>Aidlift Service</h1>
             </header>
             <div class="container">
+
+                <!-- Container for the main content of the site -->
                 <div class="main-container">
                     <main>
                         <h2>Welcome!</h2>
-                        <p>If you need further assistance please click on the button
-                                below..</p>
-
-    
-                        <div id="images">
+                        <div id="alert-bar">
+                            <strong>Alert:</strong> Authorities have been notified. Please stay calm.
+                        </div>
+                        <p id="help-message">If you need further assistance please click on the button below...</p>
+                        
+                        
+                        <!-- <div id="images">
+                            <p>Please upload your media file</p>
                             <form id="uploadForm" enctype="multipart/form-data">
                                 <input 
-                                  type="file" 
+                                  type="file"
                                   id="mediaInput" 
                                   accept="image/*,video/*" 
                                   required
@@ -60,29 +66,43 @@
                                 <button type="submit">Upload Media</button>
                             </form>
 
+                        </div> -->
+
+                        <div id="popup-overlay" class="hidden">
+                            <div id="popup-content">
+                                <p id="accepted-formats">Accepted formats: PNG, JPG, JPEG, MP4, MOV</p>
+
+                                <form id="uploadForm" enctype="multipart/form-data">
+                                    <label for="mediaInput" class="custom-file-label">
+                                        Choose a file
+                                    </label>
+                                    <input type="file" id="mediaInput" accept="image/*,video/*" required />
+                                    <button type="submit" id="uploadMediaButton">Upload Media</button>
+                                    <p id="file-name">filename</p>
+                                </form>
+                            </div>
                         </div>
                         <button id="assistance">Click for assistance</button>
 
-
+                        <!-- Maybe put this in the corner somewhere -->
                         <p id="location">Location will be displayed here...</p>
-            
+
+
                         <h1 class="centered-heading">Simulating Drone Arrival</h1>
             
                         
                         <div class="map-wrapper pulse">
                             <div id="map">
                                 <div class="loading-container">
-                                    <img id='drone-logo' src="/images/drone.gif" alt="Loading... PLEASE WAIT HOLY SHIT" class="loading-gif" />
+                                    <img id='drone-logo' src="/images/drone.gif" alt="Gif of drone bobbing up and up in the air" class="loading-gif" />
                                 </div>
                             </div>
-                            
                         </div>
-                        <!-- <div id="map-container">
-                            <div id="drone"></div>
-                        </div> -->
+                        
                     </main>
                 </div>
     
+                <!-- Container for the AI Chatbox -->
                 <div class="ai-container">
                     <div id="ai-support">
                       <h2>AI CHAT SUPPORT</h2>
@@ -103,14 +123,12 @@
 
 
 
-                <div id="live-video">
-                                    
+                <!-- <div id="live-video">
                     <video id="videoElement" width="640" height="480" autoplay></video>
                     <button id="startCameraButton" disabled>Start Camera</button>
                     <button id="stopCameraButton" disabled>Stop Camera</button>
-            
                 </div>
-        
+         -->
                 <footer>
                     <p>© 2025 AidLift</p>
                 </footer>

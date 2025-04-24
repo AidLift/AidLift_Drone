@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd client && npm install && npm run build",
-    "start": "cd server && npm install && npm run start",
-    "clean": "npm install rimraf && rimraf node_modules client/node_modules server/node_modules client/dist"
+    "clean": "npm install rimraf && npm run clean:pycache && rimraf node_modules client/node_modules server/node_modules client/dist",
+    "clean:pycache": "npm install rimraf && rimraf \"**/__pycache__\" --glob",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "npm run install:all && cd client && npm run build",
+    "start": "cd server && npm run start"
   },
   "keywords": [],
   "author": "",
