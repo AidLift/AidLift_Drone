@@ -20,9 +20,6 @@ app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
 // app.use(express.static(path.join(__dirname, 'dist')));
 // app.use(express.static(path.join(__dirname, 'client', 'dist')));
 
-
-
-
 app.post('/hospitals', (req, res) => {
   const { hospitals } = req.body;
 
