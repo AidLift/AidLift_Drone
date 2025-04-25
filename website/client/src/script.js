@@ -901,12 +901,8 @@ const handleAIButton =  async (e) => {
 
         e.target.value = '';
         e.target.disabled = false;
-
     }
 }
-
-
-
 
 /**
  * Main setup (Comment in the future*)
@@ -926,72 +922,34 @@ function setup(){
     //     }
     // }, { once: true });
 
-
     // accessCamera()
 
     // Get person's location and simulate the view of a satelite
     fetchAndSimulateSateliteView();
-    
+    displayCredits();
     // AI help chat
     document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
 }
 
+function displayCredits(){
+    const modal = document.getElementById("credits-modal");
+    const openModalText = document.getElementById("openModalText");
+    const closeModal = document.getElementsByClassName("closeModal");
 
+    openModalText.onclick = function() {
+        modal.style.display = "block";
+    }
 
-// document.addEventListener('DOMContentLoaded', () => {
-//   const slides = document.querySelectorAll('.slides-wrapper .slide');
-//   const nextBtn = document.getElementById('next-slide');
-//   const prevBtn = document.getElementById('prev-slide');
-//   const emergencyBtn = document.getElementById('emergency-button');
-//   const mainSite = document.getElementById('main-site');
+    closeModal.onclick = function() {
+        modal.style.display = "none";
+    }
 
-//   let currentSlide = 0;
-
-//   function showSlide(index) {
-//     slides.forEach((slide, i) => {
-//       slide.classList.remove('active');
-//       if (i === index) slide.classList.add('active');
-//     });
-//   }
-
-//   nextBtn.addEventListener('click', () => {
-//     currentSlide = (currentSlide + 1) % slides.length;
-//     showSlide(currentSlide);
-//   });
-
-//   prevBtn.addEventListener('click', () => {
-//     currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-//     showSlide(currentSlide);
-//   });
-
-//   emergencyBtn.addEventListener('click', () => {
-//     mainSite.scrollIntoView({ behavior: 'smooth' });
-//   });
-
-//   let startX = 0;
-//   let endX = 0;
-
-//   const swipeArea = document.getElementById('slides-wrapper');
-//   swipeArea.addEventListener('touchstart', (e) => {
-//     startX = e.touches[0].clientX;
-//   });
-
-//   swipeArea.addEventListener('touchend', (e) => {
-//     endX = e.changedTouches[0].clientX;
-//     handleSwipe();
-//   });
-
-//   function handleSwipe() {
-//     if (startX - endX > 50) {
-//       nextBtn.click();
-//     } else if (endX - startX > 50) {
-//       prevBtn.click();
-//     }
-//   }
-
-//   showSlide(currentSlide);
-// });
-
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+    }
+}
 
 /// --- TODO
 /**

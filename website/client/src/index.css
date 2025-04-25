@@ -370,7 +370,9 @@
   position: absolute;
   bottom: -30px;
   font-size: 14px;
-  color: #333;
+  /* color: #333; */
+  color: #cec0c0;
+
   white-space: nowrap;
 }
 
@@ -825,3 +827,80 @@ button:hover {
   font-weight: bold;
 } */
 
+
+
+/* CREDITS */
+/* footer {
+  text-align: center;
+  padding: 20px;
+} */
+footer {
+  padding: 10px;
+  background-color: #121212;
+  color: #fff;
+  width: 100%;
+  margin-top: 50px;
+}
+
+
+#flex-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center; 
+  align-items: center;     
+  text-align: center;
+  gap: 20px
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 600px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+.credits-card {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.credits-card h3 {
+  margin-bottom: 15px;
+  font-size: 24px;
+  color: #333;
+}
+
+.credits-card p {
+  font-size: 16px;
+  color: #555;
+}
+
+.credits-card strong {
+  font-weight: bold;
+  color: #333;
+}
+
+
+#openModalText{
+  color: #3a99f8; 
+  cursor: pointer; 
+  text-decoration: underline;
+}

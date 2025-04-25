@@ -250,6 +250,19 @@ def detect_fire():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify if the app is responsive."""
+    try:
+        return jsonify({
+            "status": "success",
+            "message": "App is up and running"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
