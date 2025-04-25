@@ -411,3 +411,123 @@ function gridToLatLon(coords, gridData) {
   
     return [lat, lon];
 }
+
+
+//// HASHING
+
+async function calculateFileHash(file) {
+    const arrayBuffer = await file.arrayBuffer(); // Read file into buffer
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer); // Hash it
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
+    return hashHex;
+}
+
+
+const fileHash = await calculateFileHash(mediaFile);
+console.log('Original file hash:', fileHash);
+
+
+
+
+
+// function removeOldFlags(fireFlags, fireMarkers, maxAge = 1000 * 60 * 10) {
+//     const now = Date.now();
+//     fireFlags = fireFlags.filter(f => {
+//         if (now - f.time >= maxAge) {
+//             const markerIndex = fireMarkers.findIndex(marker => 
+//                 marker.getLatLng().lat === f.lat && marker.getLatLng().lng === f.lon
+//             );
+//             if (markerIndex !== -1) {
+//                 fireMarkers[markerIndex].remove();
+//                 fireMarkers.splice(markerIndex, 1); 
+//             }
+//             return false; 
+//         }
+//         return true; 
+//     });
+// }
+
+// function checkForHighFireTraffic(fireFlags, fireMarkers, centerLat, centerLon, radius = 500) {
+
+//     let isTrafficHigh = false;
+//     // removeOldFlags(fireFlags, fireMarkers)
+//     let count = 0;
+//     console.log(count);
+
+//     fireFlags.forEach(flag => {
+//         const distance = calculateDistance(centerLat, centerLon, flag.lat, flag.lon);
+//         if (distance <= radius) {
+//             count++;
+//         }
+//     });
+
+//     if (count >= 5) {
+//         console.log("🔥🔥🔥 High traffic fire area detected!");
+//         isTrafficHigh = true;
+//         // Now you can call defineAndDeployDrone() or flag probablyFire as true
+//     } else {
+//         console.log(`🔥 ${count} fire reports in the area`);
+//     }
+
+//     return isTrafficHigh;
+// }
+
+
+
+        // Define the hospital markers for nearby hospitals
+        // const hospitalIcon = L.icon({
+        //     iconUrl: '/images/hospital.png',
+        //     iconSize: [32, 32],
+        //     iconAnchor: [16, 32],
+        //     popupAnchor: [0, -32]
+        // });
+        // for (const hospital of sateliteResponse.hospitals){
+        //     const hospitalMarker = L.marker([hospital.lat, hospital.lon], {
+        //         icon: hospitalIcon
+        //     }).addTo(map);
+        // }
+        
+
+
+// Maybe use WebSockets or recording to upload the image and get the data
+// -- This needs to be done after the video and image processing is done
+// -- Data Streaming would actually be sick if that can work
+
+
+// -- Can capture these frames at regular intervals (every 100ms or every second)
+// -- Each frame can then be sent to AI model, can process these indiviual frames
+function accessCamera(){
+    const videoElement = document.getElementById('videoElement');
+
+    // Button to start the camera
+    const startCameraButton = document.getElementById('startCameraButton');
+    startCameraButton.addEventListener('click', startCamera);
+
+    // Button to stop the camera
+    const stopCameraButton = document.getElementById('stopCameraButton');
+    stopCameraButton.addEventListener('click', stopCamera);
+
+    let stream;
+
+    // Start the camera feed
+    async function startCamera() {
+        try {
+            // Request access to the camera
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            // Display the camera feed in the video element
+            videoElement.srcObject = stream;
+        } catch (error) {
+            console.error('Error accessing the camera:', error);
+        }
+    }
+
+    // Stop the camera feed
+    function stopCamera() {
+        if (stream) {
+            // Stop all tracks (video and audio) from the stream
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+}

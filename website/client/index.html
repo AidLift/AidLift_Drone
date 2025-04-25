@@ -26,8 +26,7 @@
     </head>
     <body>
         <!-- Landing Screen -->
-        <section class="hero" id="hero">
-            <!-- Container for the landing screen -->
+        <!-- <section class="hero" id="hero">
             <div class="hero-content">
                 <h1 class="fade-in">AIDLIFT</h1>
                 <p class="fade-in delay">
@@ -35,8 +34,24 @@
                 </p>
                 <div class="scroll-down" id="scroll-down">&#8595;</div>
             </div>
+        </section> -->
+
+
+        <!-- Landing Screen -->
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <h1 class="fade-in">AIDLIFT</h1>
+                <p class="fade-in delay">
+                    AI-powered disaster detection. Real-time fire response simulation.
+                </p>
+                <p class="fade-in delay2">
+                    Detects wildfires using AI + video analysis
+                </p>
+                <div class="scroll-down" id="scroll-down">&#8595;</div>
+            </div>
         </section>
         
+        <!-- The main site content -->
         <section class="main-site" id="main-site">
             <header>
                 <h1>Aidlift Service</h1>
@@ -46,58 +61,121 @@
                 <!-- Container for the main content of the site -->
                 <div class="main-container">
                     <main>
-                        <h2>Welcome!</h2>
-                        <div id="alert-bar">
-                            <strong>Alert:</strong> Authorities have been notified. Please stay calm.
-                        </div>
-                        <p id="help-message">If you need further assistance please click on the button below...</p>
-                        
-                        
-                        <!-- <div id="images">
-                            <p>Please upload your media file</p>
-                            <form id="uploadForm" enctype="multipart/form-data">
-                                <input 
-                                  type="file"
-                                  id="mediaInput" 
-                                  accept="image/*,video/*" 
-                                  required
-                                />
-
-                                <button type="submit">Upload Media</button>
-                            </form>
-
-                        </div> -->
-
-                        <div id="popup-overlay" class="hidden">
-                            <div id="popup-content">
-                                <p id="accepted-formats">Accepted formats: PNG, JPG, JPEG, MP4, MOV</p>
-
-                                <form id="uploadForm" enctype="multipart/form-data">
-                                    <label for="mediaInput" class="custom-file-label">
-                                        Choose a file
-                                    </label>
-                                    <input type="file" id="mediaInput" accept="image/*,video/*" required />
-                                    <button type="submit" id="uploadMediaButton">Upload Media</button>
-                                    <p id="file-name">filename</p>
-                                </form>
+                        <div id="welcome-loading-container">
+                            <div id="welcome-container">
+                                <h2>Welcome!</h2>
+                                <div id="alert-bar">
+                                    <strong>Alert:</strong> Authorities have been notified. Please stay calm.
+                                </div>
+                                <p id="help-message">If you need further assistance please click on the button below...</p>
+        
+                                <div id="popup-overlay" class="hidden">
+                                    <div id="popup-content">
+                                        <p id="accepted-formats">Accepted formats: PNG, JPG, JPEG, MP4, MOV</p>
+        
+                                        <form id="uploadForm" enctype="multipart/form-data">
+                                            <label for="mediaInput" class="custom-file-label">
+                                                Choose a file
+                                            </label>
+                                            <input type="file" id="mediaInput" accept="image/*,video/*" required />
+                                            <button type="submit" id="uploadMediaButton">Upload Media</button>
+                                            <p id="file-name">filename</p>
+                                            <p id="upload-status" style="display: none; color: #007BFF; margin-top: 10px;">
+                                                Uploading... Please wait.
+                                            </p>
+                                        </form>
+                                    </div>
+                                </div>
+                                <button id="assistance">Click for assistance</button>
                             </div>
+
+                            <div id="loading-until-detection" class="drone-spinner">
+                                <!-- Circular loader -->
+                                <div class="processing-ring"></div>
+                                <!-- Scanning effect -->
+                                <div class="scan-line"></div>
+                                <!-- Processing text -->
+                                <div class="processing-text">Processing Media</div>
+                            </div>
+
                         </div>
-                        <button id="assistance">Click for assistance</button>
 
-                        <!-- Maybe put this in the corner somewhere -->
-                        <p id="location">Location will be displayed here...</p>
 
+
+
+                        <!-- Displays error message here -->
+                        <p id="location"></p>
 
                         <h1 class="centered-heading">Simulating Drone Arrival</h1>
             
-                        
-                        <div class="map-wrapper pulse">
-                            <div id="map">
-                                <div class="loading-container">
-                                    <img id='drone-logo' src="/images/drone.gif" alt="Gif of drone bobbing up and up in the air" class="loading-gif" />
+                        <!-- Displays the map -->
+                        <div class="map-info-container">
+                            <div class="map-wrapper pulse">
+                                <div id="map">
+                                    <div class="loading-container">
+                                        <img id='drone-logo' src="/images/drone.gif" alt="Gif of drone bobbing up and up in the air" class="loading-gif" />
+                                    </div>
                                 </div>
                             </div>
+
+                            <div id="info-additional-container">
+
+                                <div id="info-panel" class="info-card">
+                                    <h3>🚩 Status Panel</h3>
+                                    <p id="info-location"><strong>📍 Location:</strong><br><span id="info-lat-long"></span></p>
+                                    <div id="info-after-button">
+                                        <p><strong>🔥 Detection:</strong><br>
+                                            Fire Detected: <span id="fire-status"></span><br>
+                                            Confidence: <span id="confidence-value"></span>
+                                        </p><br>
+                                        <p><strong>📂 Last Upload:</strong><br><span id="info-file-name"></span></p><br>
+                                        <p><strong>🏥 Nearest Hospital:</strong><br><span id="info-nearest-hospital"></span><br>
+                                            <span id="info-hospital-distance"></span></p><br>
+                                        <!-- <p class="danger-zone"><strong>⚠️ Zone Risk:</strong> HIGH</p> -->
+                                    </div>
+                                    <p id="zone-risk" class="low-risk"><strong>Zone Risk:</strong> 
+                                        <span id="risk-text">LOW</span></p>
+
+                                </div>
+    
+                                <div class="additional-content">
+                                    <div class="additional-box drone-status">
+                                        <div class="header-with-pulse">
+                                            <div class="signal-pulse"></div>
+                                            <h4>Drone Status</h4><br>
+                                        </div>
+                             
+
+                                        <!-- <p><strong>Status:</strong> <span id="drone-status">Disabled</span></p>
+                                        <p><strong>Supplies:</strong> <span id="drone-supplies">Medkit, Water</span></p>
+                                        <p><strong>Signal Strength:</strong> <span id="drone-signal">📶📶📶</span></p>
+                                        <p><strong>Heading:</strong> <span id="drone-heading">Current Route: User Location</span></p><br>
+                                        <p>ADD A DEPLOYED FROM COORDS WAREHOUSE</p>
+                                         -->
+
+                                        <p><strong>Connected To:</strong> <span id="drone-connection">Drone A</span></p>
+                                        <p><strong>Mission Status:</strong> <span id="drone-status">Standby</span></p>
+
+                                        <div id="drone-hidden-info">
+                                            <p><strong>Destination:</strong> <span id="drone-heading">User Location</span></p>
+                                            <p><strong>Payload:</strong> <span id="drone-supplies">Medkit, Water</span></p>
+                                            <!-- <p><strong>Dispatched From:</strong> <span id="drone-origin">—</span></p><br> -->
+                                        </div>
+                                  
+                                        <div class="battery-wrapper">
+                                            <strong>Battery:</strong> <span id="drone-battery">76%</span>
+                                            <div class="battery-container">
+                                              <div class="battery-bar" id="battery-bar"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
                         </div>
+
                         
                     </main>
                 </div>

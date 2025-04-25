@@ -69,7 +69,7 @@ async function detectFireAndGetHospitalPath(latitude, longitude, sateliteRespons
         console.log('Fire detection response:', data);
         return data;
     } catch (err) {
-        console.error('Error generating path:', err);
+        // console.error('Error generating path:', err);
         return null;
     }
 }
@@ -89,27 +89,87 @@ async function detectFireAndGetHospitalPath(latitude, longitude, sateliteRespons
  */
 async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile){
     const hospitalPath = await detectFireAndGetHospitalPath(latitude, longitude, sateliteResponse, mediaFile);
+    const spinner = document.getElementById('loading-until-detection');
+    spinner.classList.remove('active');
+    
+    if(hospitalPath == null){return}
+
+    console.log('HospitalPath', hospitalPath);
 
     // If there's no fire detected return back
     // -- Handle this
-    const helpMessage = document.getElementById("help-message")
+    document.getElementById("info-after-button").style.display = 'block';
+    document.getElementById('info-file-name').textContent = mediaFile.name;
 
-    if(hospitalPath.fire_detected == false || hospitalPath == null){
+    // Change this to hospital coords bc its undefined
+    // console.log(sateliteResponse.hospitals[hospitalPath.hospital_index].name)
+    // if(sateliteResponse.hospitals[hospitalPath.hospital_index].name){
+    //     document.getElementById('info-nearest-hospital').textContent = sateliteResponse.hospitals[hospitalPath.hospital_index].name 
+    // }
+
+    // Switch the risk class name
+    const zoneRisk = document.getElementById('zone-risk');
+    const riskText = document.getElementById('risk-text');
+
+    // Define the help message and change the UI confidence
+    const helpMessage = document.getElementById("help-message")
+    document.getElementById('confidence-value').textContent = hospitalPath.confidence
+
+    if(hospitalPath.fire_detected == false){
         console.log('There is no fire within the area')
+        document.getElementById('alert-bar').style.display = 'none';
+        document.getElementById('fire-status').textContent = '❌';
+        zoneRisk.className = 'low-risk';
+        riskText.textContent = 'LOW';
+
         helpMessage.textContent = `Cannot detect any fire within this media.
             Drone will not be dispatched.`
         return
     }
 
-    // console.log(hospitalPath);
+    document.getElementById('assistance').disabled = true;
 
-    // If no roads are available
-    // -- Doesnt work need to figure out a better conditional
+    // Display the nearest hospital coords after the response gets sent
+    const hospCoords = hospitalPath.nearest_hospital.coords;
+    document.getElementById('info-nearest-hospital').textContent = `Lat: ${hospCoords[0].toFixed(6)}, Long: ${hospCoords[1].toFixed(6)}`;
 
-    // Display the path for the hospitals
-    const pathLatLon = hospitalPath.road_route.map(
-        ([lat, lon]) => L.latLng(lat, lon)
-    );
+    // Display the status pannel info
+    document.getElementById('fire-status').textContent = '✅';
+    zoneRisk.className = 'high-risk'
+    riskText.textContent = 'HIGH';
+
+    //Calculate the distance
+    const hpCoords = hospitalPath.nearest_hospital.coords;
+    const hpDistance = calculateDistance(latitude, longitude, hpCoords[0], hpCoords[1])
+    document.getElementById("info-hospital-distance").textContent = `${(hpDistance / 1000).toFixed(3)} km`
+
+
+    // Define the hospital icon and display icon
+    const hospitalIcon = L.icon({
+        iconUrl: '/images/hospital.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+    L.marker(hospitalPath.nearest_hospital.coords, {
+        icon: hospitalIcon
+    }).addTo(map);
+
+
+    // Check to see if the person is in montreal
+    let pathLatLon;
+    if(hospitalPath.road_route.length < 7){
+        pathLatLon = hospitalPath.escape_route.map(
+            ([lat, lon]) => L.latLng(lat, lon)
+        );
+    } else{
+        // If in Montreal use the roads
+        pathLatLon = hospitalPath.road_route.map(
+            ([lat, lon]) => L.latLng(lat, lon)
+        );
+    }   
+
+    // Display the path for the hospital
     L.polyline(pathLatLon, { 
         color: 'red',
         weight: 5,
@@ -122,6 +182,7 @@ async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResp
     // ... and the authorities will be alerted
     // And a fire icon will be placed
 
+    // Drone call
     if(sateliteResponse.probablyFire.probability == true){
 
         // Maybe add a timer for the drone?
@@ -133,11 +194,13 @@ async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResp
         document.getElementById('alert-bar').style.display = 'block';
 
         // Try to fix and deploy just one drone
-        defineAndDeployDrone(map, latitude, longitude);
+        document.getElementById('drone-heading').textContent = `
+            ${hospCoords[0].toFixed(6)}, ${hospCoords[1].toFixed(6)}`;
+        defineAndDeployDrone(map, latitude, longitude, sateliteResponse);
 
         // Display the detected fire on the map
         const fireDefaultIcon = L.icon({
-            iconUrl: '/images/fire.jpg',
+            iconUrl: '/images/fire.png',
             iconSize: [32, 32],
             iconAnchor: [16, 32],
             popupAnchor: [0, -32]
@@ -154,18 +217,18 @@ async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResp
 
 
     // Check if the fire path message exists, delete it if yes
-    const firePathMessage = document.querySelector('#fire-path-message');
-    if (firePathMessage) {
-        firePathMessage.remove();
-    }
+    // const firePathMessage = document.querySelector('#fire-path-message');
+    // if (firePathMessage) {
+    //     firePathMessage.remove();
+    // }
 
     // Create the fire path message
-    const main = document.querySelector('main');
-    const p = document.createElement('p');
-    p.id = 'fire-path-message';
-    p.textContent = `Please follow the path to the 
-        ${sateliteResponse.hospitals[hospitalPath.hospital_index].name}`;
-    main.appendChild(p);
+    // const main = document.querySelector('main');
+    // const p = document.createElement('p');
+    // p.id = 'fire-path-message';
+    // p.textContent = `Please follow the path to the 
+    //     ${sateliteResponse.hospitals[hospitalPath.hospital_index].name}`;
+    // main.appendChild(p);
 }
 
 
@@ -187,41 +250,21 @@ async function displayFireAndHospitalPath(map, latitude, longitude, sateliteResp
  * @param {Array<Object>} hospitals - An array of hospital objects with `lat`, `lon`, and `name` properties.
  * @param {number} [range=70000] - Optional. The maximum distance (in meters) to consider when searching for the nearest fire (currently unused).
  */
-async function requestAssistance(map, latitude, longitude, sateliteResponse, range = 70000){
-
-    //Displays the popup
-
-    if(sateliteResponse.isTrafficHigh){
-        console.log('SHES BURNING')
-    }
-
-    // Organzie this function and add validation in the case that
-        // they are to prank us.
-
-    // If there is confirmation of a fire then the steps below will occur
-    // ===========If Fire is Confirmed==============
-
-    
-    // ***** Drone stuff -- try to send just one drone        
-    // Deploy the drone
-    // -- Gotta add more prompts
+async function assistancePopup(map, latitude, longitude, sateliteResponse, range = 70000){
 
     // The hospital path will always get displayed no matter what,
     // The drone and authorities will be called if its a serious fire
     
-    // Remove the value and file name text in popup
+    // Remove the value and file name text in popup (refresh the info)
     document.getElementById('mediaInput').value = '';
     document.getElementById('file-name').textContent = '';
 
+    // Display the popup-overlay
     document.getElementById('popup-overlay').classList.remove('hidden');
     console.log(document.getElementById('popup-overlay'))
 
 
-    // Hide the popup when the close button is clicked
-    // document.getElementById('closePopup').addEventListener('click', function() {
-    //     document.getElementById('popup-overlay').classList.add('hidden');
-    // });
-
+    // Closes form when you click off the form
     document.getElementById('popup-overlay').addEventListener('click', function(event) {
         // Check if the click happened outside the form content
         if (event.target === document.getElementById('popup-overlay')) {
@@ -229,25 +272,27 @@ async function requestAssistance(map, latitude, longitude, sateliteResponse, ran
         }
     });
 
+    // Change the file name text content
     document.getElementById('mediaInput').addEventListener('change', function (e) {
         const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
         document.getElementById('file-name').textContent = `SELECTED FILE: ${fileName}`;
     });
 
     let mediaFile = null
-    // Display the form
-    // document.getElementById('images').style.display = 'block';
-
-    // Disable the button
-    // const button = document.getElementById('assistance');
-    // button.disabled = true;
 
     // Display helpful message
     document.getElementById("help-message").textContent = `Please
         upload an image or a video of your current location`;
 
+
     // Open up a popup
     const form = document.getElementById('uploadForm');
+    const uploadBtn = document.getElementById('uploadMediaButton');
+    const chooseFileLabel = document.querySelector('.custom-file-label');
+    const mediaInput = document.getElementById('mediaInput');
+    const uploadStatus = document.getElementById('upload-status');
+
+    // Whenever the form is submitted
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
@@ -256,55 +301,71 @@ async function requestAssistance(map, latitude, longitude, sateliteResponse, ran
 
         if (!file) {
             console.log('No file uploaded');
-            alert('Please upload an image or video first.');
             return;
         }
 
-        // Set media file to file
-        mediaFile = file
-
-        const fileHash = await calculateFileHash(mediaFile);
-        console.log('Original file hash:', fileHash);
+        // Display the spinner waiting for the response
+        const spinner = document.getElementById('loading-until-detection');
+        spinner.classList.add('active');
 
 
-        console.log('File uploaded:', file.name);
-        await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile);
+        // if (spinner.classList.contains('active')) {
+        //     startButton.textContent = 'Cancel Processing';
+        //   } else {
+        //     startButton.textContent = 'Start Processing';
+        // }
+
+        document.getElementById('popup-overlay').classList.add('hidden');
+        uploadBtn.disabled = true;
+        chooseFileLabel.style.pointerEvents = 'none';
+        chooseFileLabel.style.opacity = '0.6';
+        uploadStatus.style.display = 'block';
+        try {
+            // Set media file to file
+            mediaFile = file
+
+            console.log('File uploaded:', file.name);
+            await displayFireAndHospitalPath(map, latitude, longitude, sateliteResponse, mediaFile);            
+        } catch (error){
+            console.error('Error during upload:', error);
+            // alert('Something went wrong while uploading.');
+        } finally {
+            uploadBtn.disabled = false;
+            chooseFileLabel.style.pointerEvents = 'auto';
+            chooseFileLabel.style.opacity = '1';
+            uploadStatus.style.display = 'none';
+        }
     });
-
 
 }
 
 
+function defineAndDeployDrone(map, latitude, longitude, sateliteResponse){
 
-//// HASHING
-
-async function calculateFileHash(file) {
-    const arrayBuffer = await file.arrayBuffer(); // Read file into buffer
-    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer); // Hash it
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
-    return hashHex;
-}
-
-function defineAndDeployDrone(map, latitude, longitude){
-
-    // Drone is defined
-    let droneLatitude = latitude-0.30;
-    let droneLongitude = longitude-0.50;
-
-    const droneHelperIcon = L.icon({
-        iconUrl: '/images/drone.png',
-
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32]
-    });
-
-    const droneHelper = L.marker([droneLatitude, droneLongitude], {
-        icon: droneHelperIcon
-    }).addTo(map);
-
+    // Update the status of drone in the UI
+    const droneStatus = document.getElementById('drone-status')
+    droneStatus.textContent = 'En Route';
     
+    // Reveal more drone information
+    document.getElementById('drone-hidden-info').style.display = 'block';
+
+    // Drone lat and long is retrieved from the connected drone
+    let droneLatitude = sateliteResponse.droneLocation[0];
+    let droneLongitude = sateliteResponse.droneLocation[1];
+
+    // Try to move this
+    // const droneHelperIcon = L.icon({
+    //     iconUrl: '/images/drone.png',
+    //     iconSize: [40, 40],
+    //     iconAnchor: [20, 40],
+    //     popupAnchor: [0, -40]
+    // });
+    // const droneHelper = L.marker([droneLatitude, droneLongitude], {
+    //     icon: droneHelperIcon,
+    //     zIndexOffset: 1000
+    // }).addTo(map);
+
+    const droneHelper = sateliteResponse.droneHelper;
     droneHelper.on('click', ()=>{
         console.log(`Drone is currently traveling to ${latitude}, ${longitude}`)
     })
@@ -321,7 +382,6 @@ function defineAndDeployDrone(map, latitude, longitude){
     // Tracks time between two events
     let previousTime = performance.now();
 
-
     // Function to move the drone
     function moveDrone(){
         const currentTime = performance.now();
@@ -329,24 +389,22 @@ function defineAndDeployDrone(map, latitude, longitude){
 
         const distance = calculateDistance(droneLatitude, droneLongitude, targetLatitude, targetLongitude);
 
-        // console.log(distance)
-        // console.log(tolerance)
-
         if (distance <= tolerance) {
             console.log("Drone has reached your location and stopped.");
             droneHelper.setLatLng([targetLatitude, targetLongitude]);
+
+            droneStatus.textContent = 'Arrived';
             
         } else{
             const moveDistance = speed * deltaTime
-            
-            // Return the new frame
             const moveTowardsTarget = (current, target, moveDistance) => {
-                if (current < target) {
-                    return current + moveDistance; 
-                } else if (current > target) {
-                    return current - moveDistance; 
+                const delta = target - current;
+            
+                if (Math.abs(delta) <= moveDistance) {
+                    return target;
                 }
-                return current; 
+            
+                return current + Math.sign(delta) * moveDistance;
             };
 
             droneLatitude = moveTowardsTarget(droneLatitude, targetLatitude, moveDistance);
@@ -360,7 +418,6 @@ function defineAndDeployDrone(map, latitude, longitude){
 
     // Drone is moving towards person
     moveDrone();
-
 }
 
 // Calcuates distance of two points on the surface of a sphere
@@ -374,6 +431,69 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c; 
     return distance * 1000; 
+}
+
+
+function connectToDrone(map, latitude, longitude, sateliteResponse){
+
+    // Drone is chosen and then sent to the satelite response
+    const drones = [
+        {
+            id: "DR-001",
+            battery: 87,
+            supplies: ["Medkit", "Water", "Bandages"],
+            signal: "📶📶📶📶",
+            location : [latitude-0.30, longitude-0.50]
+        },
+        {
+            id: "DR-002",
+            battery: 65,
+            supplies: ["Water", "Insulin"],
+            signal: "📶📶📶",
+            location : [latitude - 0.25, longitude + 0.15]
+
+        },
+        {
+            id: "DR-003",
+            battery: 92,
+            supplies: ["Defibrillator", "Medkit"],
+            signal: "📶📶📶📶📶",
+            location : [latitude + 0.24, longitude - 0.23]
+
+        },
+        {
+            id: "DR-004",
+            battery: 43,
+            supplies: ["Blankets", "IV Fluids", "Glucose"],
+            signal: "📶📶",
+            location : [latitude + 0.25, longitude + 0.15]
+
+        }
+    ];
+
+    const randomIndex = Math.floor(Math.random() * drones.length);
+    const drone = drones[randomIndex];
+    
+    document.getElementById("drone-connection").textContent = drone.id;
+    document.getElementById("drone-supplies").textContent = drone.supplies.join(", ");
+    document.getElementById("drone-battery").textContent = drone.battery + "%";
+    document.getElementById("battery-bar").style.width = drone.battery + "%";
+
+    
+    const droneHelperIcon = L.icon({
+        iconUrl: '/images/drone.png',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40]
+    });
+    const droneHelper = L.marker([drone.location[0], drone.location[1]], {
+        icon: droneHelperIcon,
+        zIndexOffset: 1000
+    }).addTo(map);
+
+    // Pass the drone location;
+    sateliteResponse.droneLocation = drone.location;
+    sateliteResponse.droneHelper = droneHelper;
 }
 
 /**
@@ -396,7 +516,6 @@ function initializeMapWithData(latitude, longitude, sateliteResponse){
         // Create the map
         // -- Can add it to satelitle.map for less params (maybe)
         const map = L.map('map').setView([latitude, longitude], 13);
-        console.log(map)
 
         // Remove loading screen
         const loading = document.querySelector('.loading-container');
@@ -409,6 +528,13 @@ function initializeMapWithData(latitude, longitude, sateliteResponse){
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Change the status of the latitude and longitude
+        document.getElementById('info-lat-long').textContent = `Lat: ${latitude.toFixed(6)}, Long: ${longitude.toFixed(6)}`;
+
+        // Connect to the drone and display the drone status and more information
+        connectToDrone(map, latitude, longitude, sateliteResponse);
+        document.getElementById('info-additional-container').style.display = 'block';
+        
         // Enable the help button as soon as possible
         const button = document.getElementById('assistance');
         button.disabled = false;
@@ -420,118 +546,73 @@ function initializeMapWithData(latitude, longitude, sateliteResponse){
             iconAnchor: [16, 32],
             popupAnchor: [0, -32]
         });
-
         L.marker([latitude, longitude], {icon: personIcon}).addTo(map)
         .bindPopup('This is me')
         .openPopup();
 
-
-        // Define the hospital markers for nearby hospitals
-        const hospitalIcon = L.icon({
-            iconUrl: '/images/hospital.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-        });
-        for (const hospital of sateliteResponse.hospitals){
-            const hospitalMarker = L.marker([hospital.lat, hospital.lon], {
-                icon: hospitalIcon
-            }).addTo(map);
-        }
-        
         // Based on the satelite response, identifies probable fire
         // Elaborate and reflect more on this
-        if(sateliteResponse.probablyFire.probability == true){
-            // Define the probable fire marker
-            const probablyFireIcon = L.icon({
-                iconUrl: '/images/probableFire.jpg',
-                iconSize: [32, 32],    
-                iconAnchor: [16, 32],
-                popupAnchor: [0, -32]
-            });
-            L.marker(sateliteResponse.probablyFire.probablyFireLocation, 
-                {icon: probablyFireIcon}).addTo(map)
-        } else {
-            console.log('No fires being detected around your area')
-        }
 
-        // Flag attempt
-        let fireFlags = [];
-        let fireMarkers = [];
+        // Feature to flag on the map
+        defineFlagFeature(map, sateliteResponse);
 
-        map.on('contextmenu', (e) => {
-            const lat = e.latlng.lat;
-            const lon = e.latlng.lng;
-        
-            fireFlags.push({ lat, lon, time: Date.now() });
-        
-            // L.marker([lat, lon], { icon: fireFlagIcon }).addTo(map).bindPopup("🔥 Fire reported");
-            const fireMarker = L.marker([lat, lon], { icon: personIcon })
-                .addTo(map).bindPopup("🔥 Fire reported");
-
-            fireMarkers.push(fireMarker);
-
-            // Can call this afterwards maybe
-            const isTrafficHigh = checkForHighFireTraffic(map, fireFlags, fireMarkers, lat, lon);
-            // console.log(isTrafficHigh);
-
-            // Change the satelite traffic
-            sateliteResponse.isTrafficHigh = isTrafficHigh
-            console.log('Satelite', sateliteResponse.isTrafficHigh);
-
-            // Pass the report object ig in sateliteResponse with all the fireFlags
-        });
-        
-        
-        // Drone is created and moved to the lat and long given      
+        // Open up the assistancePopup    
         document.getElementById('assistance')
             .addEventListener('click', () => {
-                requestAssistance(map, latitude, longitude, sateliteResponse)
+                assistancePopup(map, latitude, longitude, sateliteResponse);
             });
     }
 }
 
-// function removeOldFlags(fireFlags, fireMarkers, maxAge = 1000 * 60 * 10) {
-//     const now = Date.now();
-//     fireFlags = fireFlags.filter(f => {
-//         if (now - f.time >= maxAge) {
-//             const markerIndex = fireMarkers.findIndex(marker => 
-//                 marker.getLatLng().lat === f.lat && marker.getLatLng().lng === f.lon
-//             );
-//             if (markerIndex !== -1) {
-//                 fireMarkers[markerIndex].remove();
-//                 fireMarkers.splice(markerIndex, 1); 
-//             }
-//             return false; 
-//         }
-//         return true; 
-//     });
-// }
+function defineFlagFeature(map, sateliteResponse){
 
-// function checkForHighFireTraffic(fireFlags, fireMarkers, centerLat, centerLon, radius = 500) {
+    if(sateliteResponse.probablyFire.probability == true){
+        const probablyFireIcon = L.icon({
+            iconUrl: '/images/probableFire.jpg',
+            iconSize: [32, 32],    
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+        L.marker(sateliteResponse.probablyFire.probablyFireLocation, 
+            {icon: probablyFireIcon}).addTo(map)
+    } else {
+        console.log('No fires being detected around your area')
+    }
 
-//     let isTrafficHigh = false;
-//     // removeOldFlags(fireFlags, fireMarkers)
-//     let count = 0;
-//     console.log(count);
+    // Flag attempt
+    let fireFlags = [];
+    let fireMarkers = [];
 
-//     fireFlags.forEach(flag => {
-//         const distance = calculateDistance(centerLat, centerLon, flag.lat, flag.lon);
-//         if (distance <= radius) {
-//             count++;
-//         }
-//     });
+    map.on('contextmenu', (e) => {
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+    
+        fireFlags.push({ lat, lon, time: Date.now() });
+    
+        const flagIcon = L.icon({
+            iconUrl: '/images/flag.png',
+            iconSize: [32, 32],    
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+        // L.marker([lat, lon], { icon: fireFlagIcon }).addTo(map).bindPopup("🔥 Fire reported");
+        const fireMarker = L.marker([lat, lon], { icon: flagIcon })
+            .addTo(map).bindPopup("🔥 Fire reported");
 
-//     if (count >= 5) {
-//         console.log("🔥🔥🔥 High traffic fire area detected!");
-//         isTrafficHigh = true;
-//         // Now you can call defineAndDeployDrone() or flag probablyFire as true
-//     } else {
-//         console.log(`🔥 ${count} fire reports in the area`);
-//     }
+        fireMarkers.push(fireMarker);
 
-//     return isTrafficHigh;
-// }
+        // Can call this afterwards maybe
+        const isTrafficHigh = checkForHighFireTraffic(map, fireFlags, fireMarkers, lat, lon);
+        // console.log(isTrafficHigh);
+
+        // Change the satelite traffic
+        sateliteResponse.isTrafficHigh = isTrafficHigh
+        console.log('Satelite', sateliteResponse.isTrafficHigh);
+
+        // Pass the report object ig in sateliteResponse with all the fireFlags
+    });
+    
+}
 
 const warningMarkers = [];
 
@@ -618,9 +699,6 @@ async function fetchNearbyHospitals(latitude, longitude, radius = 10000) {
 }
 
 
-
-
-
 async function getCityFromCoords(lat, lon) {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`, {
     //   headers: {
@@ -674,9 +752,6 @@ async function simualteSatelite(latitude, longitude){
         // -- Make this a paragraph
         console.log('There are no hospitals within your location');
     }
-
-    console.log('HOSPITALS',hospitals);
-
     
     // Sends the hospitals over the backend
     // Write it over to a json
@@ -751,12 +826,7 @@ async function fetchAndSimulateSateliteView(){
                 // const latitude = 41.9028
                 // const longitude = 12.4964
 
-                // document.getElementById('location').textContent = `Location: 
-                //     Latitude: ${latitude}, Longitude: ${longitude}`;
                 const sateliteResponse = await simualteSatelite(latitude, longitude)
-
-                document.getElementById('location').textContent = `You are in 
-                    ${sateliteResponse.city}: Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 // Uoad the map with the markers
                 initializeMapWithData(latitude, longitude, sateliteResponse);
@@ -843,42 +913,24 @@ const handleAIButton =  async (e) => {
  * Gonna have to restructure everything
  */
 function setup(){
-    // Could maybe display a game or a loading screen in the wait time
-    // Instead of boring map
-
-    // const hxp = async () => {
-    //     const h1 = await fetchHospitals()
-    //     console.log('dhdhdh',h1)
-    // }
-
-    // hxp()
-    // Display the original map
-    // -- Add a random spawn everytime
-
-    // Disable the help button until all the information is retrieved
-    // -- Maybe it should always be enabled
-
     // When user clicks the arrow, scroll to main site
     document.getElementById('scroll-down').addEventListener('click', () => {
         document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
     });
     // Detect first scroll and auto-jump to next section
-    let hasScrolled = false;
-    window.addEventListener('wheel', (e) => {
-    if (!hasScrolled) {
-        hasScrolled = true;
-        document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
-        }
-    }, { once: true });
+    // let hasScrolled = false;
+    // window.addEventListener('wheel', (e) => {
+    // if (!hasScrolled) {
+    //     hasScrolled = true;
+    //     document.getElementById('main-site').scrollIntoView({ behavior: 'smooth' });
+    //     }
+    // }, { once: true });
 
 
     // accessCamera()
 
     // Get person's location and simulate the view of a satelite
     fetchAndSimulateSateliteView();
-
-    // When the button is clicked
-    // document.getElementById('assistance').addEventListener('click', () => getLocationAndSendHelp(map));
     
     // AI help chat
     document.getElementById('aiInput').addEventListener('keypress', (e) => handleAIButton(e));
@@ -886,51 +938,60 @@ function setup(){
 
 
 
+// document.addEventListener('DOMContentLoaded', () => {
+//   const slides = document.querySelectorAll('.slides-wrapper .slide');
+//   const nextBtn = document.getElementById('next-slide');
+//   const prevBtn = document.getElementById('prev-slide');
+//   const emergencyBtn = document.getElementById('emergency-button');
+//   const mainSite = document.getElementById('main-site');
 
-// Maybe use WebSockets or recording to upload the image and get the data
-// -- This needs to be done after the video and image processing is done
-// -- Data Streaming would actually be sick if that can work
+//   let currentSlide = 0;
 
+//   function showSlide(index) {
+//     slides.forEach((slide, i) => {
+//       slide.classList.remove('active');
+//       if (i === index) slide.classList.add('active');
+//     });
+//   }
 
-// -- Can capture these frames at regular intervals (every 100ms or every second)
-// -- Each frame can then be sent to AI model, can process these indiviual frames
-function accessCamera(){
-    const videoElement = document.getElementById('videoElement');
+//   nextBtn.addEventListener('click', () => {
+//     currentSlide = (currentSlide + 1) % slides.length;
+//     showSlide(currentSlide);
+//   });
 
-    // Button to start the camera
-    const startCameraButton = document.getElementById('startCameraButton');
-    startCameraButton.addEventListener('click', startCamera);
+//   prevBtn.addEventListener('click', () => {
+//     currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+//     showSlide(currentSlide);
+//   });
 
-    // Button to stop the camera
-    const stopCameraButton = document.getElementById('stopCameraButton');
-    stopCameraButton.addEventListener('click', stopCamera);
+//   emergencyBtn.addEventListener('click', () => {
+//     mainSite.scrollIntoView({ behavior: 'smooth' });
+//   });
 
-    let stream;
+//   let startX = 0;
+//   let endX = 0;
 
-    // Start the camera feed
-    async function startCamera() {
-        try {
-            // Request access to the camera
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//   const swipeArea = document.getElementById('slides-wrapper');
+//   swipeArea.addEventListener('touchstart', (e) => {
+//     startX = e.touches[0].clientX;
+//   });
 
-            // Display the camera feed in the video element
-            videoElement.srcObject = stream;
-        } catch (error) {
-            console.error('Error accessing the camera:', error);
-        }
-    }
+//   swipeArea.addEventListener('touchend', (e) => {
+//     endX = e.changedTouches[0].clientX;
+//     handleSwipe();
+//   });
 
-    // Stop the camera feed
-    function stopCamera() {
-        if (stream) {
-            // Stop all tracks (video and audio) from the stream
-            stream.getTracks().forEach(track => track.stop());
-        }
-    }
-}
+//   function handleSwipe() {
+//     if (startX - endX > 50) {
+//       nextBtn.click();
+//     } else if (endX - startX > 50) {
+//       prevBtn.click();
+//     }
+//   }
 
+//   showSlide(currentSlide);
+// });
 
-  
 
 /// --- TODO
 /**
