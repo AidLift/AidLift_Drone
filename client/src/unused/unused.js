@@ -198,3 +198,336 @@ if(closestFire.latitude && closestFire.longitude){
 //       "height": 500
 //     }
 //   }
+
+
+
+async function fetchHospitals() {
+    try {
+      const response = await fetch('http://192.168.2.135:5000/get-hospitals');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      console.log("Hospitals:", data.hospitals);
+      
+      // You can now use data.hospitals to do stuff in your UI
+      return data.hospitals;
+  
+    } catch (error) {
+      console.error("Failed to fetch hospitals:", error);
+    }
+  }
+
+
+  
+
+// function getImageOrVideo(event){
+//     event.preventDefault();
+//     console.log('SENT')
+
+//     const mediaInput = document.getElementById('mediaInput');
+//     const file = mediaInput.files[0];
+
+//     if (file) {
+//         console.log("Selected file:", file);
+//         console.log("File type:", file.type);
+  
+//         const formData = new FormData();
+//         formData.append("media", file);
+  
+//         fetch('/api/upload-media', {
+//           method: 'POST',
+//           body: formData
+//         })
+//         .then(response => response.text())
+//         .then(result => {
+//           console.log("Upload success:", result);
+//         })
+//         .catch(error => {
+//           console.error("Upload error:", error);
+//         });
+//       }
+// }
+
+
+
+    // -- Random bounds
+    // const bounds = {
+    //     min_lat: -61.83,
+    //     max_lat: 61.17,
+    //     min_lon: -126.32,
+    //     max_lon: 170.41
+    // };
+    
+    // const dimensions = {
+    //     width: 580,
+    //     height: 270
+    // };
+
+    // -- Rome bounds
+    // const bounds = {
+    //     min_lat: 41.8,
+    //     max_lat: 42.1,
+    //     min_lon: 12.4,
+    //     max_lon: 12.6
+    // };
+
+    // const dimensions = {
+    //     width: 500,
+    //     height: 500
+    // };
+
+
+        // const gridData = {
+    //     "bounds": {
+    //         "min_lat": 45.4,
+    //         "max_lat": 45.7,
+    //         "min_lon": -73.7,
+    //         "max_lon": -73.4
+    //     },
+    //     "dimensions": {
+    //         "width": 500,
+    //         "height": 500
+    //     }
+
+    // }
+
+
+
+    async function writeDataToJson(hospitals, bounds, dimensions) {
+        // Retrieve the stored data from localStorage
+        const previousHospitals = JSON.parse(localStorage.getItem('hospitals'));
+        const previousBounds = JSON.parse(localStorage.getItem('bounds'));
+        const previousDimensions = JSON.parse(localStorage.getItem('dimensions'));
+    
+        // Check if the data has changed by comparing the objects directly
+        const hospitalsChanged = JSON.stringify(hospitals) !== JSON.stringify(previousHospitals);
+        const boundsChanged = JSON.stringify(bounds) !== JSON.stringify(previousBounds);
+        const dimensionsChanged = JSON.stringify(dimensions) !== JSON.stringify(previousDimensions);
+        
+    
+        // Handle hospital changes
+        if (hospitalsChanged) {
+            try {
+                
+                await fetch('http://192.168.2.135:5000/save-hospitals', {
+                // await fetch('http://192.168.2.135:5000/save-hospitals', {
+    
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hospitals: hospitals
+                    })
+                });
+            } catch (err) {
+                console.error('❌ Failed to save hospitals:', err);
+            }
+        }
+    
+        // Handle bounds and dimensions changes
+        if (boundsChanged || dimensionsChanged) {
+            try {
+                await fetch('http://192.168.2.135:5000/save-grid-info', {
+                // await fetch('http://192.168.2.135:5000/save-grid-info', {
+    
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bounds, dimensions })
+                }).then(res => res.json());
+            } catch (err) {
+                console.error('❌ Failed to save grid info:', err);
+            }
+        }
+    
+        // Update localStorage if any data has changed
+        if (hospitalsChanged) {
+            localStorage.setItem('hospitals', JSON.stringify(hospitals));
+        }
+        if (boundsChanged) {
+            localStorage.setItem('bounds', JSON.stringify(bounds));
+        }
+        if (dimensionsChanged) {
+            localStorage.setItem('dimensions', JSON.stringify(dimensions));
+        }
+    
+        // Return success after all operations are completed
+        return { success: true };
+    }
+
+    // await writeDataToJson(hospitals, gridData.bounds, gridData.dimensions);
+
+
+    // let closestDistance = Infinity
+    // let closestFire = null
+
+
+
+    async function testOutNewPath(latitude, longitude, hospitalPath, sateliteResponse){
+
+        // If its undefined check out the add error handling
+        const convertHospiCoords = gridToLatLon(hospitalPath.nearest_hospital.grid, 
+            sateliteResponse.gridData)
+    
+        
+        const condasfsa = gridToLatLon([228, 269], 
+            sateliteResponse.gridData)
+        console.log('dddasa', condasfsa)
+    
+        try {
+            const response = await fetch('http://192.168.2.135:5001/api/get-path', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                start: [latitude, longitude],
+                end: convertHospiCoords
+            })
+            });
+        
+            // Check if the response is OK (status 200-299)
+            if (response.ok) {
+                const data = await response.json(); 
+                // console.log('Response: PATHHTHS', data);
+                return data;
+            } else {
+                console.error('Server error:', response.status, await response.text());
+            }
+        } catch (error) {
+            console.error('Request failed', error);
+        }
+    }
+
+
+    // First function
+function gridToLatLon(coords, gridData) {
+    const { min_lat, max_lat, min_lon, max_lon } = gridData.bounds;
+    const { width, height } = gridData.dimensions;
+  
+    const lat = max_lat - (coords[1] / height) * (max_lat - min_lat);
+    const lon = min_lon + (coords[0] / width) * (max_lon - min_lon);
+  
+    return [lat, lon];
+}
+
+
+//// HASHING
+
+async function calculateFileHash(file) {
+    const arrayBuffer = await file.arrayBuffer(); // Read file into buffer
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer); // Hash it
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
+    return hashHex;
+}
+
+
+const fileHash = await calculateFileHash(mediaFile);
+console.log('Original file hash:', fileHash);
+
+
+
+
+
+// function removeOldFlags(fireFlags, fireMarkers, maxAge = 1000 * 60 * 10) {
+//     const now = Date.now();
+//     fireFlags = fireFlags.filter(f => {
+//         if (now - f.time >= maxAge) {
+//             const markerIndex = fireMarkers.findIndex(marker => 
+//                 marker.getLatLng().lat === f.lat && marker.getLatLng().lng === f.lon
+//             );
+//             if (markerIndex !== -1) {
+//                 fireMarkers[markerIndex].remove();
+//                 fireMarkers.splice(markerIndex, 1); 
+//             }
+//             return false; 
+//         }
+//         return true; 
+//     });
+// }
+
+// function checkForHighFireTraffic(fireFlags, fireMarkers, centerLat, centerLon, radius = 500) {
+
+//     let isTrafficHigh = false;
+//     // removeOldFlags(fireFlags, fireMarkers)
+//     let count = 0;
+//     console.log(count);
+
+//     fireFlags.forEach(flag => {
+//         const distance = calculateDistance(centerLat, centerLon, flag.lat, flag.lon);
+//         if (distance <= radius) {
+//             count++;
+//         }
+//     });
+
+//     if (count >= 5) {
+//         console.log("🔥🔥🔥 High traffic fire area detected!");
+//         isTrafficHigh = true;
+//         // Now you can call defineAndDeployDrone() or flag probablyFire as true
+//     } else {
+//         console.log(`🔥 ${count} fire reports in the area`);
+//     }
+
+//     return isTrafficHigh;
+// }
+
+
+
+        // Define the hospital markers for nearby hospitals
+        // const hospitalIcon = L.icon({
+        //     iconUrl: '/images/hospital.png',
+        //     iconSize: [32, 32],
+        //     iconAnchor: [16, 32],
+        //     popupAnchor: [0, -32]
+        // });
+        // for (const hospital of sateliteResponse.hospitals){
+        //     const hospitalMarker = L.marker([hospital.lat, hospital.lon], {
+        //         icon: hospitalIcon
+        //     }).addTo(map);
+        // }
+        
+
+
+// Maybe use WebSockets or recording to upload the image and get the data
+// -- This needs to be done after the video and image processing is done
+// -- Data Streaming would actually be sick if that can work
+
+
+// -- Can capture these frames at regular intervals (every 100ms or every second)
+// -- Each frame can then be sent to AI model, can process these indiviual frames
+function accessCamera(){
+    const videoElement = document.getElementById('videoElement');
+
+    // Button to start the camera
+    const startCameraButton = document.getElementById('startCameraButton');
+    startCameraButton.addEventListener('click', startCamera);
+
+    // Button to stop the camera
+    const stopCameraButton = document.getElementById('stopCameraButton');
+    stopCameraButton.addEventListener('click', stopCamera);
+
+    let stream;
+
+    // Start the camera feed
+    async function startCamera() {
+        try {
+            // Request access to the camera
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            // Display the camera feed in the video element
+            videoElement.srcObject = stream;
+        } catch (error) {
+            console.error('Error accessing the camera:', error);
+        }
+    }
+
+    // Stop the camera feed
+    function stopCamera() {
+        if (stream) {
+            // Stop all tracks (video and audio) from the stream
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+}
