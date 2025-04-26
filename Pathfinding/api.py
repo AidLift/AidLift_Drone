@@ -35,12 +35,24 @@ class FireDetector:
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
+        self.model = None  # Model will be loaded lazily
+        self.model_path = "models/best_model_extended.pth"
         # Load model architecture
-        self.model = ConvNet(num_classes=2).to(self.device)
-        self.model.load_state_dict(torch.load("models/best_model_extended.pth", map_location=self.device))
-        self.model.eval()
+        # self.model = ConvNet(num_classes=2).to(self.device)
+        # self.model.load_state_dict(torch.load("models/best_model_extended.pth", map_location=self.device))
+        # self.model.eval()
+
+    def load_model(self):
+        # Load model if it's not already loaded
+        if self.model is None:
+            print("Loading model...")
+            self.model = ConvNet(num_classes=2).to(self.device)
+            self.model.load_state_dict(torch.load(self.model_path, map_location=self.device))
+            self.model.eval()
+
 
     def predict(self, image):
+        self.load_model()
         img_tensor = transform(image).unsqueeze(0).to(self.device)
         print(f"🧪 Tensor stats — min: {img_tensor.min().item():.4f}, max: {img_tensor.max().item():.4f}, mean: {img_tensor.mean().item():.4f}")
         with torch.no_grad():
