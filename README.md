@@ -59,3 +59,21 @@ ATTRIBUTIONS
 
     Hospital Icon:
     https://www.freepik.com/icon/hospital_4521422#fromView=keyword&page=1&position=27&uuid=3c30d28c-ceee-4c0b-9745-ac8267f7dd91
+
+
+> How to run the model
+>> Inside a terminal
+  git clone
+  cd AidLift_Drone
+  cd website
+  npm run build
+  npm run start
+
+>> Open a new terminal
+  cd AidLift_Drone
+  cd Pathfinding
+  python download_model.py
+  python api.py
+
+>> Go on the internet and type:
+  localhost:5000
