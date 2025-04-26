@@ -62,18 +62,19 @@ ATTRIBUTIONS
 
 
 > How to run the model
->> Inside a terminal
+
+Inside a terminal:
   git clone
   cd AidLift_Drone
   cd website
   npm run build
   npm run start
 
->> Open a new terminal
+ Open a new terminal:
   cd AidLift_Drone
   cd Pathfinding
   python download_model.py
   python api.py
 
->> Go on the internet and type:
+Go on the internet and type:
   localhost:5000
