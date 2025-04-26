@@ -24,5 +24,6 @@ COPY . .
 EXPOSE 5001
 # CMD ["python", "api.py", "--host", "0.0.0.0", "--port", "5001"]
 # CMD ["gunicorn", "api:app", "--bind", "0.0.0.0:5001"]
-CMD ["gunicorn", "api:app", "--bind", "0.0.0.0:5001", "--workers=1", "--threads=2", "--timeout=120"]
+# CMD ["gunicorn", "api:app", "--bind", "0.0.0.0:5001", "--workers=1", "--threads=2", "--timeout=120"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "5001"]
 
