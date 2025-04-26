@@ -24,4 +24,4 @@ gdown==5.2.0
 osmnx==2.0.2
 scikit-learn==1.6.1
 gunicorn==23.0.0
-
+networkx==3.4.2
