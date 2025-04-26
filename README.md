@@ -64,8 +64,9 @@ ATTRIBUTIONS
 > How to run the model
 
 Inside a terminal:
-  git clone,
+  git clone https://github.com/AidLift/AidLift_Drone/tree/process-image,
   cd AidLift_Drone,
+  git pull origin process-image,
   cd website,
   npm run build,
   npm run start,
