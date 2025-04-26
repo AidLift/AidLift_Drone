@@ -148,10 +148,11 @@ def grid_to_latlon(coords, grid_data):
 
     return (lat, lon)
 
-G = ox.graph_from_place("Montréal, Quebec, Canada", network_type="drive", retain_all=True, simplify=True)
-G = ox.project_graph(G, to_crs='epsg:4326')
+# G = ox.graph_from_place("Montréal, Quebec, Canada", network_type="drive", retain_all=True, simplify=True)
+# G = ox.project_graph(G, to_crs='epsg:4326')
 
 def get_road_route(start_coords, end_coords):
+    return [0,0]
     try:
         start_coords = tuple(start_coords)
         end_coords = tuple(end_coords)
