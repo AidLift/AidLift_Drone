@@ -47,3 +47,5 @@ KEY Features
 
 
 
+
+Please go to the process-image branch's ReadME for steps on how to the run the project locally
