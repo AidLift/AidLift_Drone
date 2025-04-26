@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from flask_cors import CORS
 from services.path_service import PathService
-from Pathfinding.Pathfinder import get_nearest_nodes, run_astar, path_to_coordinates
+from Pathfinder import get_nearest_nodes, run_astar, path_to_coordinates
 import osmnx as ox
 
 
