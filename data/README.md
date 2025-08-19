@@ -1,4 +1,3 @@
-#Data collections
 
 ## Folder Structure
 - raw/: unprocessed data (e.g., images, videos).
