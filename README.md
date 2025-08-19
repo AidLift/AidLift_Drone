@@ -29,13 +29,6 @@ The project combines two core functionalities:
 - **Prototype Goals**: Provide a proof-of-concept that shows how fire detection and routing can be combined into one platform.  
 - **Limitations**: Current results are based on simulations and image-based testing, not live deployments.  
 
----
-
-## Vision
-
-By automating parts of the detection and response workflow, Aid Lift Drone seeks to help emergency teams save more lives and reduce the damage caused by fires.
-
----
 
 ## Disclaimer
 
