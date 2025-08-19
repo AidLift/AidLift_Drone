@@ -13,11 +13,12 @@ The project combines two core functionalities:
 1. **Fire Detection from Images**  
    - Uses computer vision models to scan aerial or ground-level images.  
    - Identifies possible fire hazards, hotspots, or smoke signatures.  
-   - Designed with adaptability in mind, so it can be integrated with drone-mounted cameras, CCTV networks, or satellite imagery in the future.  
+   - Designed with adaptability in mind, so it can be integrated with drone-mounted cameras, CCTV networks, or satellite imagery in the future.
+   - The term ‘fires’ here refers to images of smoky areas that suggest the possible presence of a fire in the region.
 
 2. **Optimized Emergency Routing**  
    - Once a fire is detected, the system calculates the **closest and most effective route** for emergency response units (firefighters, medical aid, or evacuation support).  
-   - The routing system accounts for speed, accessibility, and efficiency, and is designed to minimize delays during crisis situations.  
+   - The routing system accounts for speed, accessibility, and efficiency.
    - Potential integration with real-time traffic and terrain data is part of the roadmap.  
 
 ---
@@ -31,12 +32,6 @@ The project combines two core functionalities:
 ---
 
 ## Vision
-
-The long-term goal of Aid Lift Drone is to create a **scalable, reliable, and field-ready system** that can:  
-- Detect fires earlier and more accurately than manual observation.  
-- Deliver immediate situational awareness to first responders.  
-- Suggest the fastest and safest routes to reach affected areas.  
-- Integrate with drones, smart city infrastructure, and emergency dispatch centers.  
 
 By automating parts of the detection and response workflow, Aid Lift Drone seeks to help emergency teams save more lives and reduce the damage caused by fires.
 
