@@ -32,4 +32,4 @@ The project combines two core functionalities:
 
 ## Disclaimer
 
-This project is an **academic and experimental prototype**. The system is not yet validated for operational use and should not be relied upon for real-world fire detection or routing. Always consult with official authorities and verified emergency services for actual response protocols.
+This project is an **academic and experimental prototype**. The system is not yet validated for operational use. It was developped through the AI Launch Lab Initiative.
