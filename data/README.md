@@ -1,4 +1,3 @@
-
 ## Folder Structure
 - raw/: unprocessed data (e.g., images, videos).
 - processed: Cleaned and preprocessed data.
